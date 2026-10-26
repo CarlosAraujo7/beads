@@ -1,0 +1,10 @@
+# imagens enviadas para conversão (entrada; ficam só no computador)
+remessa */
+
+# saídas descartáveis e cópias de segurança locais
+tools/out/
+tools/backups/
+
+__pycache__/
+*.pyc
+.claude/
