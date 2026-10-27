@@ -137,6 +137,9 @@ def fill_holes(rows):
                     if c: g[y][x] = c.most_common(1)[0][0]
     return [''.join(r) for r in g]
 
+import palette as _P
+# letras do cinza do fundo/grade da folha: H5 (e, com 120 cores, os cinzas escuros vizinhos H6/G17/M12)
+_GREYGRID = {ord(c['letter']): '.' for c in _P.ALL if c['code'] in (('H5',) if _P.MODE == '24' else ('H5', 'H6', 'G17', 'M12'))}
 _EEVEE = []
 def eeveelutions():
     """folha 84x80 com as 9 evoluções do Eevee (gráfico com grade, remessa 5 img 7): converte tudo e separa os 9 sprites (leitura: cima->baixo, esq->dir)"""
@@ -146,7 +149,7 @@ def eeveelutions():
         for j in range(3):
             for i in range(3):
                 part = [r[xb[i]:xb[i + 1]] for r in rows[yb[j]:yb[j + 1]]]
-                if (j, i) != (1, 1): part = [r.replace('d', '.') for r in part]       # cinza do fundo/grade (só o Umbreon tem corpo cinza-escuro)
+                if (j, i) != (1, 1): part = [r.translate(_GREYGRID) for r in part]       # cinza do fundo/grade (só o Umbreon tem corpo cinza-escuro)
                 _EEVEE.append(fill_holes(O.drop_specks(O.trim(part), maxsize=5)))
     return _EEVEE
 
@@ -266,10 +269,11 @@ if __name__ == '__main__':
     for n, fn in CFG:
         if only and not any(o in n for o in only): continue
         try:
+            __import__('r5').SKIN_ON = __import__('r5').skin_for(n, 'Outros')
             r = fn(); out.append((n, 'Outros', r)); items.append((f'{n[:26]} {len(r[0])}x{len(r)}'.encode('ascii', 'replace').decode(), r))
         except Exception as e:
             import traceback; traceback.print_exc(); print('ERRO', n, repr(e))
     print(len(out), 'templates')
-    if not only: json.dump(out, open(os.path.join(SP, 'data', 'final_outros.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+    if not only: json.dump(out, open(os.path.join(SP, 'data', 'final_outros' + __import__('palette').sfx() + '.json'), 'w', encoding='utf-8'), ensure_ascii=False)
     for k in range(0, len(items), 12):
-        render_flat(items[k:k + 12], os.path.join(OUT, f'outros_{k // 12}.png'), scale=8, W=1900)
+        render_flat(items[k:k + 12], os.path.join(OUT, f'outros_{k // 12}' + __import__('palette').sfx() + '.png'), scale=8, W=1900)

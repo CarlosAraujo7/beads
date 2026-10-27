@@ -12,9 +12,7 @@ import numpy as np
 SP = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SP)
 
-_HEX = {'k': '2E2E32', 'w': 'FFFFFF', 'i': 'E4E7EA', 'd': '5F6065', 'm': '8A8D93', 'l': 'B5B8BE', 'r': 'BD3A4B', 'p': 'EA9BB8', 'q': 'F1C4D1',
-        'o': 'EC8546', 'a': 'E9A23B', 'y': 'EBC22F', 's': 'E4C7B5', 't': 'D99479', 'n': '8F5E50', 'b': '6B98D3', 'c': '55BEDB', 'e': 'C3E5F3',
-        'u': '75609A', 'v': 'A89BC6', 'x': 'C8C4E4', 'g': '7FC79C', 'f': '5FA66E', 'h': '3F8761'}
+from palette import HEX_BY_LETTER as _HEX      # letra -> 'RRGGBB' das 120 cores (serve para moldes de 24 ou de 120 cores)
 RGB = {k: np.array([int(v[i:i + 2], 16) for i in (0, 2, 4)], float) for k, v in _HEX.items()}
 N = 24
 

@@ -53,7 +53,7 @@ CFG = [
  ('Criatura redonda preta com chamas azuis', 'Outros desenhos', lambda: E(25)),
  ('Herói de traje amarelo e preto (voando)', 'Outros desenhos', lambda: E(33)),
  ('Foice e martelo', 'Outros desenhos', lambda: E(21)),
- ('Che Guevara (retrato)', 'Outros desenhos', lambda: E(30)),
+ ('Che Guevara (retrato)', 'Outros desenhos', lambda: E(30, colmap=[((255, 254, 205), 14, 's')])),      # rosto amarelo-claríssimo do cartaz -> pele (senão vira o amarelo-oliva A1 em 120 cores)
  ('Retrato com gorro de Natal e cachorro (malha 1)', 'Outros desenhos', lambda: E(19, crop_img=(28, 82, 633, 723), mode=True)),
  ('Retrato de homem de barba (malha 2)', 'Outros desenhos', lambda: E(19, crop_img=(681, 82, 1286, 723), mode=True, ref=(204, 204, 204), tol=18)),
 ]
@@ -63,10 +63,11 @@ if __name__ == '__main__':
     for n, g, fn in CFG:
         if only and not any(o in n for o in only): continue
         try:
+            __import__('r5').SKIN_ON = __import__('r5').skin_for(n, g)
             r = fn(); out.append((n, g, r)); items.append((f'{n[:26]} {len(r[0])}x{len(r)} p{len(O.components(r))}'.encode('ascii', 'replace').decode(), r))
         except Exception as e:
             import traceback; traceback.print_exc(); print('ERRO', n, repr(e))
     print(len(out), 'templates')
-    if not only: json.dump(out, open(os.path.join(SP, 'data', 'final14.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+    if not only: json.dump(out, open(os.path.join(SP, 'data', 'final14' + __import__('palette').sfx() + '.json'), 'w', encoding='utf-8'), ensure_ascii=False)
     for k in range(0, len(items), 12):
-        render_flat(items[k:k + 12], os.path.join(OUT, f'r12_x_{k // 12}.png'), scale=8, W=1900)
+        render_flat(items[k:k + 12], os.path.join(OUT, f'r12_x_{k // 12}' + __import__('palette').sfx() + '.png'), scale=8, W=1900)

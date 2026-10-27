@@ -12,6 +12,7 @@ nome e categoria; no templates.js o campo "group" é apenas o nome da categoria.
   * categoria = a que tem o nome da série (inclusive categorias que o usuário criou ou renomeou), senão a franquia
     conhecida (tools/franchises.py), senão a mais usada por moldes da mesma série; série nova vira categoria nova;
     séries genéricas ("Outros"...) vão para "Outros";
+  * moldes com mais de 50 em algum lado são REDUZIDOS para 1 placa (shrink.py) — o catálogo só tem moldes de 1 placa e de 120 cores (--keep-big desliga);
   * faz cópia de segurança do templates.js em tools/backups/ antes de gravar.
 """
 import os, sys, json, argparse, unicodedata
@@ -20,11 +21,14 @@ sys.path.insert(0, HERE)
 from collections import Counter
 import tplfile
 import franchises as F
+import shrink
 
 ap = argparse.ArgumentParser()
 ap.add_argument('files', nargs='+')
 ap.add_argument('--dry', action='store_true')
 ap.add_argument('--readd', action='store_true', help='recoloca também os que o usuário excluiu antes')
+ap.add_argument('--replace', action='store_true', help='nome que já existe: TROCA as linhas do molde (mantém id, categoria e posição). Use para refazer as versões de 120 cores quando os hex da paleta forem corrigidos; apaga ajustes que o usuário gravou nesses moldes')
+ap.add_argument('--keep-big', action='store_true', help='NÃO reduz para 1 placa (por padrão todo molde novo com mais de 50 em algum lado é reduzido: política do catálogo desde 2026-10-27)')
 ap.add_argument('--templates', default=os.path.join(os.path.dirname(HERE), 'templates.js'))
 a = ap.parse_args()
 
@@ -64,11 +68,15 @@ def ensure_cat(cat, label):
     cfg['order'] = order[:at] + [cat] + order[at:] + ['other']
     print('categoria nova criada na galeria:', F.NAME_BY_ID.get(cat, label))
 
-added = 0; skipped = 0
+added = 0; skipped = 0; replaced = 0
 for f in a.files:
     path = f if os.path.exists(f) else os.path.join(HERE, 'data', f)
     for n, g, rows in json.load(open(path, encoding='utf-8')):
         if n in names:
+            if a.replace:
+                t = next(x for x in items if x['name'] == n)
+                if t['rows'] != rows: t['rows'] = rows; replaced += 1
+                continue
             print('AVISO: nome repetido, pulado:', n); skipped += 1; continue
         if n in removed and not a.readd:
             print('pulado (o usuário excluiu este template antes; use --readd para recolocar):', n); skipped += 1; continue
@@ -82,14 +90,17 @@ for f in a.files:
             # série = franquia: vai para a categoria dela; se ainda não existe na galeria, a categoria é criada
             cat = by_name(g) or F.GROUP_MAP.get(g) or (by_group[g].most_common(1)[0][0] if g in by_group else tplfile.slug(g))
             ensure_cat(cat, g)
+        if not a.keep_big and (len(rows) > 50 or max(len(r) for r in rows) > 50):
+            old_dim = (len(rows[0]), len(rows)); rows = shrink.shrink(rows, 50, 'bias', empty_at=0.6)
+            print('reduzido para 1 placa:', n, '%dx%d -> %dx%d' % (old_dim[0], old_dim[1], len(rows[0]), len(rows)))
         grp = cat_name(cat, g)
         base = tplfile.slug(n); i = base; k = 2
         while i in ids: i = '%s-%d' % (base, k); k += 1
         ids.add(i); names.add(n)
         items.append({'id': i, 'cat': cat, 'group': grp, 'name': n, 'rows': rows}); by_group.setdefault(grp, Counter())[cat] += 1
         added += 1
-print('acrescentados:', added, '| pulados:', skipped, '| total:', len(items))
+print('acrescentados:', added, '| pulados:', skipped, '| trocados:', replaced, '| total:', len(items))
 if a.dry: print('(--dry: nada foi gravado)')
-elif added:
+elif added or replaced:
     tplfile.write(a.templates, d['legend'], d['cfg'], items, d.get('removed'))
     print('gravado:', a.templates, '(cópia de segurança em tools/backups/)')

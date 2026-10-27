@@ -88,10 +88,11 @@ if __name__ == '__main__':
     for n, g, fn in CFG:
         if only and not any(o in n for o in only): continue
         try:
+            __import__('r5').SKIN_ON = __import__('r5').skin_for(n, g)
             r = fn(); out.append((n, g, r)); items.append((f'{n[:26]} {len(r[0])}x{len(r)} p{len(O.components(r))}'.encode('ascii', 'replace').decode(), r))
         except Exception as e:
             import traceback; traceback.print_exc(); print('ERRO', n, repr(e))
     print(len(out), 'templates')
-    if not only: json.dump(out, open(os.path.join(SP, 'data', 'final13.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+    if not only: json.dump(out, open(os.path.join(SP, 'data', 'final13' + __import__('palette').sfx() + '.json'), 'w', encoding='utf-8'), ensure_ascii=False)
     for k in range(0, len(items), 12):
-        render_flat(items[k:k + 12], os.path.join(OUT, f'r11_x_{k // 12}.png'), scale=8, W=1900)
+        render_flat(items[k:k + 12], os.path.join(OUT, f'r11_x_{k // 12}' + __import__('palette').sfx() + '.png'), scale=8, W=1900)

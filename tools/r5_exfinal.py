@@ -5,7 +5,9 @@ sys.path.insert(0, SP)
 import r5, r5_final, outline as O
 from flat import render_flat
 E = r5.exact
-wm = lambda y0: (lambda r: [x if y < y0 else ''.join('.' if c in 'tsqo' else c for c in x) for y, x in enumerate(r)])   # texto/marca d'agua no pe
+import palette as _P
+_WM = 'tsqo' if _P.MODE == '24' else ''.join(c['letter'] for c in _P.ALL if c['code'] in ('G5', 'G1', 'E2', 'A7', 'E1', 'E11', 'E14', 'E15', 'G2', 'G3', 'A12', 'G9', 'A9', 'A10', 'G6'))
+wm = lambda y0: (lambda r: [x if y < y0 else ''.join('.' if c in _WM else c for c in x) for y, x in enumerate(r)])   # texto/marca d'agua no pe
 CFG = [
  ('Homem-Aranha (chibi)', 'Super-heróis', lambda: E(1)),
  ('Deadpool', 'Super-heróis', lambda: E(3)),
@@ -46,10 +48,11 @@ if __name__ == '__main__':
     out = []; items = []
     for n, g, fn in CFG + r5_final.EXTRA[2:]:
         try:
+            __import__('r5').SKIN_ON = __import__('r5').skin_for(n, g)
             r = fn(); out.append((n, g, r)); items.append((f'{n[:24]} {len(r[0])}x{len(r)} p{len(O.components(r))}'.encode('ascii', 'replace').decode(), r))
         except Exception as e:
             print('ERRO', n, repr(e))
-    json.dump(out, open(os.path.join(SP, 'data', 'final7.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+    json.dump(out, open(os.path.join(SP, 'data', 'final7' + __import__('palette').sfx() + '.json'), 'w', encoding='utf-8'), ensure_ascii=False)
     print(len(out), 'templates')
     for k in range(0, len(items), 10):
-        render_flat(items[k:k + 10], os.path.join(OUT, f'r5_x_{k // 10}.png'), scale=8, W=1900)
+        render_flat(items[k:k + 10], os.path.join(OUT, f'r5_x_{k // 10}' + __import__('palette').sfx() + '.png'), scale=8, W=1900)

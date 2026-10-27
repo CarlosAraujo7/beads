@@ -24,8 +24,13 @@ def _lab(rgb):
 
 
 LAB = {k: _lab(v) for k, v in RGB.items()}
-# peso extra das cores escuras: o contorno de 1 conta é o que mais se perde numa redução
-BIAS = {'k': 1.9, 'd': 1.5, 'm': 1.15}
+# peso extra das cores escuras e neutras (cinza/preto): o contorno de 1 conta é o que mais se perde numa redução.
+# Para as 24 cores antigas isso dá exatamente k=1.9, d=1.5, m=1.15; as cores neutras escuras novas (G8, B15, H6, M12…) entram pela mesma regra.
+def _bias(l):
+    L, a, b = LAB[l]
+    if (a * a + b * b) ** .5 > 14: return 1.0
+    return 1.9 if L <= 25 else 1.5 if L <= 45 else 1.15 if L <= 62 else 1.0
+BIAS = {l: _bias(l) for l in LAB if _bias(l) != 1.0}
 
 
 def target_size(w, h, size=50):

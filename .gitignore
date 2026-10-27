@@ -8,3 +8,6 @@ tools/backups/
 __pycache__/
 *.pyc
 .claude/
+
+# fotos de cartelas/anúncios (entrada)
+paleta 120/

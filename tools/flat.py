@@ -3,9 +3,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from PIL import Image, ImageDraw
 import img2tpl as T
 
-L2HEX = {}
-for code, hx in T.PAL:
-    L2HEX[T.LETTER[code]] = tuple(int(hx[i:i + 2], 16) for i in (1, 3, 5))
+from palette import HEX_BY_LETTER
+L2HEX = {l: tuple(int(h[i:i + 2], 16) for i in (0, 2, 4)) for l, h in HEX_BY_LETTER.items()}    # as 120 letras (moldes de qualquer das paletas)
 
 def render_flat(items, path, scale=8, cols=4, cell=None, W=1500):
     """items = [(titulo, rows)]"""

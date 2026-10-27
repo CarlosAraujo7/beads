@@ -11,6 +11,7 @@ FILES = sorted(glob.glob(os.path.join(REM6, '*.*')))
 def mapc(rgb):
     """mesma regra do hue_letter, com ajustes: cinzas so entre os cinzas; claros com um pouco de cor (pele, lavanda, verde-claro) por Lab;
     verde-agua vivo aceita paleta ate 30 graus de matiz; dourado claro so ambar/amarelo/laranja"""
+    if r5._PAL120_MODE == '120': return r5.near120(tuple(float(v) for v in rgb))     # BEADPAL=120: vizinho mais próximo nas 120 cores (ΔE2000)
     r, g, b = [float(v) for v in rgb]
     h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255); h *= 360
     if s < 0.08:
@@ -104,7 +105,7 @@ def exact6(idx, tol=26, thr=None, px=None, crop=None, crop_img=None, clear=(), d
         out |= np.linalg.norm(arr - np.array(rf, float), axis=2) < tol
     arr = snap(arr, dist)
     def pick(c):
-        for (rgb, tl, letter) in colmap:
+        for (rgb, tl, letter) in colmap:       # (também em 120 cores: são decisões aprovadas — pele oliva do Akagi -> marrom, vermelho puro -> F5…)
             if sum((a - b) ** 2 for a, b in zip(c, rgb)) ** 0.5 <= tl: return letter
         return mapc(c)
     rows = [''.join('.' if out[y, x] else pick(arr[y, x]) for x in range(W)) for y in range(H)]
@@ -112,6 +113,7 @@ def exact6(idx, tol=26, thr=None, px=None, crop=None, crop_img=None, clear=(), d
     for (y0, y1, x0, x1) in clear:
         rows = [''.join('.' if (y0 <= y <= y1 and x0 <= x <= x1) else c for x, c in enumerate(r)) for y, r in enumerate(rows)]
     rows = O.trim(rows)
+    if r5._PAL120_MODE == '120': rows = r5.despeckle120(rows)       # só em 120 cores
     if post: rows = post(rows)
     return O.trim(rows)
 
@@ -134,7 +136,7 @@ def ring_render(idx, px=None, dark=40, ann_max=12, colmap=(), dist=18, clear=(),
         return a[ys[sel], xs[sel]].max(axis=1).mean() if sel.any() else 0
     snp = snap(body, dist)
     def pick(c):
-        for (rgb, tl, letter) in colmap:
+        for (rgb, tl, letter) in colmap:       # (também em 120 cores: são decisões aprovadas — pele oliva do Akagi -> marrom, vermelho puro -> F5…)
             if sum((u - v) ** 2 for u, v in zip(c, rgb)) ** 0.5 <= tl: return letter
         return mapc(c)
     rows = []
@@ -168,7 +170,7 @@ def photo6(idx, p0, spread=0.25, bgfn=None, ring=(0.2, 0.42), bbox=None, angles=
     if keepbg: out = isbg
     snp = snap(arr, dist)
     def pick(c):
-        for (rgb, tl, letter) in colmap:
+        for (rgb, tl, letter) in colmap:       # (também em 120 cores: são decisões aprovadas — pele oliva do Akagi -> marrom, vermelho puro -> F5…)
             if sum((u - v) ** 2 for u, v in zip(c, rgb)) ** 0.5 <= tl: return letter
         if mapper:
             m = mapper(c)

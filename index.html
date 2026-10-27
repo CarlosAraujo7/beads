@@ -134,10 +134,21 @@ body[data-view="edit"] .home{display:none!important}
 .curcolor>div:last-child{min-width:0}
 .curcolor b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .curcolor small{display:block;color:var(--muted);font-size:11.5px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dock{container-type:inline-size;container-name:dock}
+.dock{container-type:inline-size;container-name:dock;position:relative}
 #palette{display:grid;grid-template-columns:repeat(12,minmax(0,38px));gap:2px 1px;flex:1;min-width:0;justify-content:start}
-@container dock (min-width:1090px){#palette{grid-template-columns:repeat(24,minmax(0,38px))}}
+#palette .hexbtn:nth-child(n+13){display:none}
+@container dock (min-width:1090px){#palette{grid-template-columns:repeat(16,minmax(0,38px))}#palette .hexbtn:nth-child(n+13){display:block}}
 @container dock (max-width:600px){#palette{grid-template-columns:repeat(8,minmax(0,38px))}}
+#palMore{flex:none;white-space:nowrap}.palcount{opacity:.6;font-weight:500;margin-left:2px}
+.palpop{position:absolute;left:10px;right:10px;bottom:calc(100% + 6px);z-index:30;max-height:min(62vh,470px);display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line-strong);border-radius:14px;box-shadow:0 10px 34px rgba(0,0,0,.28)}
+.palpop[hidden]{display:none}
+.palpop-h{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}
+.palpop-h input{flex:1;min-width:0;height:34px;border:1px solid var(--line-strong);border-radius:9px;padding:0 11px;background:var(--bg);color:var(--ink);font:inherit}
+.palpop-b{overflow:auto;padding:4px 12px 12px}
+.pgroup h4{margin:12px 0 4px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,40px));gap:3px 2px}
+.pgrid .hexbtn{width:40px}
+.pempty{padding:18px 4px;color:var(--muted)}
 .hexbtn{width:100%;aspect-ratio:44/50;height:auto;border:0;padding:0;background:var(--line-strong);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);position:relative;flex:none}
 .hexbtn .hexfill{position:absolute;inset:1.5px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);display:grid;place-items:center;font-size:10px;font-weight:700;letter-spacing:-.02em}
 .hexbtn:hover{background:var(--ink)}
@@ -719,7 +730,12 @@ dialog{border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
   <!-- ===================== PALETA ===================== -->
   <footer class="dock" id="dock">
     <div class="curcolor"><div class="big" id="curBig"></div><div><b id="curName"></b><small id="curMeta"></small></div></div>
-    <div id="palette" aria-label="Paleta de cores"></div>
+    <div id="palette" aria-label="Cores recentes"></div>
+    <button class="btn" id="palMore" aria-haspopup="true" aria-expanded="false" title="Abrir as 120 cores (busque por código ou nome)">Todas as cores <span class="palcount">120</span></button>
+    <div id="palPop" class="palpop" hidden role="dialog" aria-label="Todas as cores">
+      <div class="palpop-h"><input id="palSearch" type="search" placeholder="Buscar: código (B13) ou nome (verde)" autocomplete="off" aria-label="Buscar cor"><button class="btn sm" id="palClose">Fechar</button></div>
+      <div class="palpop-b" id="palBody"></div>
+    </div>
   </footer>
 
   <!-- ===================== PAINEL ===================== -->
@@ -734,7 +750,7 @@ dialog{border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
       <div class="sec">
         <div class="kpis">
           <div class="kpi"><small>Contas</small><b id="kTotal">0</b></div>
-          <div class="kpi"><small>Cores</small><b id="kColors">0<em>/ 24</em></b></div>
+          <div class="kpi"><small>Cores</small><b id="kColors">0</b></div>
           <div class="kpi"><small>Tamanho</small><b id="kGrid">50×50</b><span class="sub" id="kReal">13<em>cm</em></span></div>
         </div>
         <div id="stockAlert"></div>
@@ -929,7 +945,7 @@ dialog{border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
         <div class="field" id="impPxRow" hidden><span>Tamanho de cada conta na imagem</span><span><input type="number" id="impPx" min="0" max="80" step="0.1" placeholder="auto"> px</span></div>
         <div class="field"><span>Colunas × Linhas</span><span><input type="number" id="impW" min="4" max="150"> × <input type="number" id="impH" min="4" max="150"></span></div>
         <div class="range"><span>Contornos escuros</span><input type="range" id="impDark" min="0" max="100" value="0"><output id="impDarkO">0</output></div>
-        <div class="range"><span>Máx. de cores</span><input type="range" id="impColors" min="2" max="24" value="24"><output id="impColorsO">24</output></div>
+        <div class="range"><span>Máx. de cores</span><input type="range" id="impColors" min="2" max="120" value="48"><output id="impColorsO">48</output></div>
         <div class="range"><span>Contraste</span><input type="range" id="impContrast" min="-40" max="60" value="0"><output id="impContrastO">0</output></div>
         <div class="range"><span>Saturação</span><input type="range" id="impSat" min="-60" max="80" value="0"><output id="impSatO">0</output></div>
         <label class="chk"><input type="checkbox" id="impDither"> Suavizar degradês (pontilhado)</label>
@@ -947,7 +963,7 @@ dialog{border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
 <dialog id="dlgColors" class="narrow"><div class="dlg">
   <header><h2>Ajustar cores</h2><button class="btn sm" data-close>Fechar</button></header>
   <div class="body">
-    <p class="note" style="margin-top:0">As cores foram estimadas a partir da foto da tabela. Se alguma cor na tela estiver diferente da conta real, ajuste aqui — só muda a aparência, os códigos continuam os mesmos.</p>
+    <p class="note" style="margin-top:0">As cores foram estimadas a partir da foto da tabela; as marcadas com <b>~</b> (as 96 do kit de 120) saíram de uma foto de anúncio e são só uma aproximação. Se alguma cor na tela estiver diferente da conta real, ajuste aqui — só muda a aparência, os códigos continuam os mesmos.</p>
     <div class="colgrid" id="colList"></div>
   </div>
   <footer><button class="btn" id="colReset">Restaurar padrão</button><button class="btn primary" data-close>Pronto</button></footer>
@@ -958,19 +974,142 @@ dialog{border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
 <input type="file" id="fileImg" accept="image/*" hidden>
 <div id="toast" role="status"></div>
 
-<script>(function(){var b='20261026f',v=b;try{var s=JSON.parse(localStorage.getItem('beadstudio.tplv')||'null');if(s&&s.base===b)v=b+'-'+s.t}catch(e){}window.TPL_BASE_V=b;document.write('<script src="templates.js?v='+v+'"><\/script>')})();</script>
+<script>(function(){var b='20261027c',v=b;try{var s=JSON.parse(localStorage.getItem('beadstudio.tplv')||'null');if(s&&s.base===b)v=b+'-'+s.t}catch(e){}window.TPL_BASE_V=b;document.write('<script src="templates.js?v='+v+'"><\/script>')})();</script>
 <script>
 'use strict';
 /* =====================================================================
-   Dados: paleta Pindou No.1 (24 cores) na ordem da tabela impressa
+   Dados: paleta Pindou de 120 cores (as 24 primeiras = kit antigo, na ordem da tabela impressa)
    ===================================================================== */
+/*PAL-BEGIN*/
+/* Paleta Pindou de 120 cores — gerada por tools/sync_palette_to_app.py a partir de tools/data/palette.json.
+   As 24 primeiras são as do kit antigo (ordem da tabela impressa); o ÍNDICE (1..120) é o que o desenho guarda: não reordene. */
 const DEFAULT_PALETTE = [
-  ['B3','Verde claro','#7FC79C'],['C3','Azul bebê','#C3E5F3'],['D9','Lavanda','#C8C4E4'],['E2','Rosa claro','#F1C4D1'],['G1','Bege','#E4C7B5'],['A4','Amarelo','#EBC22F'],
-  ['B5','Verde','#5FA66E'],['C5','Turquesa','#55BEDB'],['D6','Lilás','#A89BC6'],['E4','Rosa','#EA9BB8'],['G5','Salmão','#D99479'],['A6','Âmbar','#E9A23B'],
-  ['B8','Verde escuro','#3F8761'],['C8','Azul','#6B98D3'],['D7','Roxo','#75609A'],['F5','Vermelho','#BD3A4B'],['G7','Marrom','#8F5E50'],['A7','Laranja','#EC8546'],
-  ['H1','Cinza gelo','#E4E7EA'],['H2','Branco','#FFFFFF'],['H3','Cinza claro','#B5B8BE'],['H4','Cinza','#8A8D93'],['H5','Cinza escuro','#5F6065'],['H7','Preto','#2E2E32']
+  ["B3","Verde claro","#7FC79C"],
+  ["C3","Azul bebê","#C3E5F3"],
+  ["D9","Lavanda","#C8C4E4"],
+  ["E2","Rosa claro","#F1C4D1"],
+  ["G1","Bege","#E4C7B5"],
+  ["A4","Amarelo","#EBC22F"],
+  ["B5","Verde","#5FA66E"],
+  ["C5","Turquesa","#55BEDB"],
+  ["D6","Lilás","#A89BC6"],
+  ["E4","Rosa","#EA9BB8"],
+  ["G5","Salmão","#D99479"],
+  ["A6","Âmbar","#E9A23B"],
+  ["B8","Verde escuro","#3F8761"],
+  ["C8","Azul","#6B98D3"],
+  ["D7","Roxo","#75609A"],
+  ["F5","Vermelho","#BD3A4B"],
+  ["G7","Marrom","#8F5E50"],
+  ["A7","Laranja","#EC8546"],
+  ["H1","Cinza gelo","#E4E7EA"],
+  ["H2","Branco","#FFFFFF"],
+  ["H3","Cinza claro","#B5B8BE"],
+  ["H4","Cinza","#8A8D93"],
+  ["H5","Cinza escuro","#5F6065"],
+  ["H7","Preto","#2E2E32"],
+  ["A1","Creme","#E3D893"],
+  ["A3","Amarelo claro","#DFCF6B"],
+  ["A5","Amarelo (A5)","#E5C241"],
+  ["A8","Amarelo (A8)","#CFAC46"],
+  ["A9","Laranja (A9)","#E59E66"],
+  ["A10","Laranja (A10)","#F6AA65"],
+  ["A11","Amarelo claro (A11)","#FAD177"],
+  ["A12","Salmão (A12)","#EBB289"],
+  ["A13","Amarelo claro (A13)","#FCCC6B"],
+  ["A14","Coral","#F8917B"],
+  ["A15","Amarelo (A15)","#D5C83B"],
+  ["B1","Amarelo (B1)","#B6BB48"],
+  ["B2","Verde-limão","#68AC44"],
+  ["B4","Verde (B4)","#5EA73D"],
+  ["B6","Verde-água","#71B8A9"],
+  ["B7","Verde-petróleo","#38796D"],
+  ["B10","Verde-água (B10)","#76B8AC"],
+  ["B11","Preto amarelado","#2E2B1F"],
+  ["B12","Verde-petróleo (B12)","#1F493D"],
+  ["B13","Verde-limão (B13)","#BBDC7C"],
+  ["B14","Verde-limão (B14)","#7CAB43"],
+  ["B15","Preto (B15)","#171F1E"],
+  ["B16","Verde-limão (B16)","#C3E590"],
+  ["B17","Verde-oliva","#51672E"],
+  ["B18","Amarelo (B18)","#BDC04F"],
+  ["B19","Verde-petróleo (B19)","#4C8C7E"],
+  ["B20","Verde claro (B20)","#E0FFDF"],
+  ["C1","Verde claro (C1)","#C7E3C6"],
+  ["C2","Verde-água claro","#B0EEED"],
+  ["C4","Azul claro","#89C3E7"],
+  ["C6","Azul (C6)","#82AACE"],
+  ["C7","Azul (C7)","#6683B6"],
+  ["C9","Azul escuro","#44498F"],
+  ["C10","Verde-água (C10)","#78C2D8"],
+  ["C11","Verde-água (C11)","#5CA6B3"],
+  ["C13","Verde-água claro (C13)","#DAF9FF"],
+  ["C14","Cinza claro (C14)","#C5D7D6"],
+  ["C15","Verde-água (C15)","#4F9CA8"],
+  ["C16","Azul escuro (C16)","#3E5073"],
+  ["C17","Verde-água (C17)","#69AFC1"],
+  ["D1","Azul (D1)","#90A6D4"],
+  ["D2","Azul (D2)","#7C93B9"],
+  ["D3","Azul escuro (D3)","#434990"],
+  ["D5","Rosa (D5)","#BD86B3"],
+  ["D8","Cinza gelo (D8)","#E6E9ED"],
+  ["D11","Azul claro (D11)","#B8CBE5"],
+  ["D12","Rosa (D12)","#C69EC6"],
+  ["D13","Magenta","#AD6598"],
+  ["D14","Roxo (D14)","#70487A"],
+  ["D15","Azul-marinho","#443F73"],
+  ["D16","Branco (D16)","#F0F7FC"],
+  ["D17","Azul claro (D17)","#9AAFCD"],
+  ["D18","Lilás (D18)","#957AAF"],
+  ["D19","Cinza gelo (D19)","#DDDADC"],
+  ["D20","Roxo (D20)","#966BA7"],
+  ["D21","Roxo (D21)","#805289"],
+  ["E1","Rosa claro (E1)","#FCD0C0"],
+  ["E3","Rosa (E3)","#FBA6B5"],
+  ["E5","Vermelho (E5)","#C7577A"],
+  ["E6","Coral (E6)","#FF8095"],
+  ["E7","Vinho","#903C59"],
+  ["E8","Branco (E8)","#FFF4F1"],
+  ["E9","Rosa (E9)","#EF9ABD"],
+  ["E10","Vermelho (E10)","#D96488"],
+  ["E11","Bege (E11)","#FFDFD1"],
+  ["E12","Rosa claro (E12)","#FFBED3"],
+  ["E13","Magenta (E13)","#974969"],
+  ["E14","Rosa claro (E14)","#FFE0D6"],
+  ["E15","Rosa claro (E15)","#F6D7D1"],
+  ["F1","Rosa claro (F1)","#FEC5BA"],
+  ["F2","Vermelho (F2)","#F78578"],
+  ["F3","Vermelho (F3)","#E87D6C"],
+  ["F4","Vermelho (F4)","#D9624B"],
+  ["F6","Vermelho (F6)","#A26553"],
+  ["F7","Preto avermelhado","#4F2628"],
+  ["F8","Vermelho escuro","#84332B"],
+  ["F9","Rosa (F9)","#EF9194"],
+  ["F10","Vinho (F10)","#693A2C"],
+  ["F11","Vinho (F11)","#5D3C34"],
+  ["F12","Vermelho (F12)","#F78076"],
+  ["F13","Vermelho (F13)","#B84E3D"],
+  ["F14","Rosa pastel","#FEB5B5"],
+  ["G2","Salmão pastel","#F1BC9D"],
+  ["G3","Salmão (G3)","#E2AE8E"],
+  ["G6","Caramelo","#B26E47"],
+  ["G8","Preto (G8)","#2B211E"],
+  ["G9","Salmão (G9)","#DAA671"],
+  ["G13","Vermelho escuro (G13)","#8C5944"],
+  ["G14","Caramelo (G14)","#8A725F"],
+  ["G17","Cinza escuro (G17)","#605A53"],
+  ["H6","Cinza escuro (H6)","#494B49"],
+  ["H12","Creme (H12)","#D9D1B0"],
+  ["M5","Bege (M5)","#BAB194"],
+  ["M6","Bege (M6)","#A4997D"],
+  ["M9","Bege escuro","#A99A82"],
+  ["M12","Cinza escuro (M12)","#4C443E"]
 ];
-const PALETTE = DEFAULT_PALETTE.map(([code,name,hex])=>({code,name,hex}));
+/* cores novas cujo hex foi ESTIMADO da foto do anúncio (marcadas com ~ em Ajustar cores) */
+const EST_CODES = new Set(["A1", "A3", "A5", "A8", "A9", "A10", "A11", "A12", "A13", "A14", "A15", "B1", "B2", "B4", "B6", "B7", "B10", "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18", "B19", "B20", "C1", "C2", "C4", "C6", "C7", "C9", "C10", "C11", "C13", "C14", "C15", "C16", "C17", "D1", "D2", "D3", "D5", "D8", "D11", "D12", "D13", "D14", "D15", "D16", "D17", "D18", "D19", "D20", "D21", "E1", "E3", "E5", "E6", "E7", "E8", "E9", "E10", "E11", "E12", "E13", "E14", "E15", "F1", "F2", "F3", "F4", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "F13", "F14", "G2", "G3", "G6", "G8", "G9", "G13", "G14", "G17", "H6", "H12", "M5", "M6", "M9", "M12"]);
+/*PAL-END*/
+const PALETTE = DEFAULT_PALETTE.map(([code,name,hex])=>({code,name,hex,est:EST_CODES.has(code)}));
+const NCOL = PALETTE.length;
 const CODE_IDX = {}; PALETTE.forEach((p,i)=>CODE_IDX[p.code]=i+1);
 let overrides = {};
 
@@ -1089,7 +1228,7 @@ const S = {
   selShape:'pen', selOn:false,   /* o que o clique pega (linha | coluna | área) e, na montagem, se o clique seleciona em vez de marcar como colocada */
   showStock:null              /* conferir estoque no painel de contas (null = decidir ao abrir) */
 };
-let counts = new Uint32Array(25), doneCounts = new Uint32Array(25), total=0, doneTotal=0, usedColors=0;
+let counts = new Uint32Array(NCOL+1), doneCounts = new Uint32Array(NCOL+1), total=0, doneTotal=0, usedColors=0;
 const hist = {undo:[],redo:[]};
 const RULER = 28;
 
@@ -1123,7 +1262,7 @@ function recount(){
   const g=S.grid,d=S.done;
   for(let i=0;i<g.length;i++){const v=g[i];if(v){counts[v]++;if(d[i])doneCounts[v]++}}
   total=0;doneTotal=0;usedColors=0;
-  for(let v=1;v<=24;v++){total+=counts[v];doneTotal+=doneCounts[v];if(counts[v])usedColors++}
+  for(let v=1;v<=NCOL;v++){total+=counts[v];doneTotal+=doneCounts[v];if(counts[v])usedColors++}
 }
 function gridChanged(){recount();if(S.tpl)S.tplDirty=true;refreshAll();scheduleSave()}
 
@@ -1570,23 +1709,79 @@ function syncZoomUI(){$('#zoom').value=S.zoom;$('#zoomVal').textContent=S.zoom+'
 /* =====================================================================
    Seleção de cor / UI da esquerda
    ===================================================================== */
+const RECENT_KEY='beadstudio.recent';
+const RECENT_DEFAULT=['H7','H2','F5','A7','A4','B5','C8','D7','E4','G7','H4','B8','C5','G1','E2','H3'];
+let recent=[];
+function loadRecent(){
+  let r=[];try{r=JSON.parse(localStorage.getItem(RECENT_KEY)||'[]')}catch(e){}
+  r=(Array.isArray(r)?r:[]).filter(v=>Number.isInteger(v)&&v>=1&&v<=NCOL);
+  for(const c of RECENT_DEFAULT){const v=CODE_IDX[c];if(v&&!r.includes(v))r.push(v)}
+  recent=r.slice(0,16);
+}
+function pushRecent(v){recent=[v,...recent.filter(x=>x!==v)].slice(0,16);try{localStorage.setItem(RECENT_KEY,JSON.stringify(recent))}catch(e){}}
+/* família de cor (só para agrupar as 120 no painel "Todas as cores") */
+function colorFamily(p){
+  const [L,a,b]=p.lab,C=Math.hypot(a,b),h=p.h;
+  if(C<9)return 0;                                              // neutros
+  if(h>=10&&h<58&&(C<36||L<52))return 1;                        // marrons e beges (inclui pele e salmão)
+  if(h>=18&&h<58)return 2;                                      // amarelos e laranjas
+  if(h>=58&&h<195)return 6;                                     // verdes (inclui verde-limão e verde-água)
+  if(h>=195&&h<250)return 5;                                    // azuis
+  if(h>=250&&h<310)return 4;                                    // roxos e lilases
+  return 3;                                                     // vermelhos e rosas
+}
+const FAMILY_NAMES=['Neutros (branco, cinzas, preto)','Marrons e beges','Amarelos e laranjas','Vermelhos e rosas','Roxos e lilases','Azuis','Verdes e verde-água'];
+function mkHex(i){
+  const p=PALETTE[i-1],b=document.createElement('button');b.className='hexbtn';b.dataset.i=i;b.title=`${p.code} · ${p.name}${p.est?' (cor estimada)':''}`;
+  b.innerHTML='<span class="hexfill"></span>';b.firstChild.textContent=p.code;
+  b.addEventListener('click',()=>{selectColor(i);closePalPop()});return b;
+}
 function buildPalette(){
-  const box=$('#palette');box.innerHTML='';
-  PALETTE.forEach((p,i)=>{
-    const b=document.createElement('button');b.className='hexbtn';b.dataset.i=i+1;b.title=`${p.code} · ${p.name}`;
-    b.innerHTML='<span class="hexfill"></span>';b.firstChild.textContent=p.code;
-    b.addEventListener('click',()=>selectColor(i+1));box.appendChild(b);
+  loadRecent();
+  const body=$('#palBody');body.innerHTML='';
+  const groups=FAMILY_NAMES.map(()=>[]);
+  PALETTE.forEach((p,i)=>groups[colorFamily(p)].push(i+1));
+  groups.forEach((list,gi)=>{
+    if(!list.length)return;
+    list.sort((a,b)=>PALETTE[b-1].lab[0]-PALETTE[a-1].lab[0]);
+    const g=document.createElement('div');g.className='pgroup';g.innerHTML=`<h4>${FAMILY_NAMES[gi]} <span style="font-weight:500;opacity:.7">· ${list.length}</span></h4><div class="pgrid"></div>`;
+    const grid=g.querySelector('.pgrid');list.forEach(i=>grid.appendChild(mkHex(i)));body.appendChild(g);
   });
+  const em=document.createElement('div');em.className='pempty';em.id='palEmpty';em.hidden=true;em.textContent='Nenhuma cor encontrada.';body.appendChild(em);
+  renderRecent();
+}
+function renderRecent(){
+  const box=$('#palette');box.innerHTML='';
+  recent.slice(0,16).forEach(i=>box.appendChild(mkHex(i)));
 }
 function selectColor(i){
   S.color=i; if(S.tool==='eraser'||S.tool==='picker'&&false)setTool('pencil');
+  pushRecent(i);renderRecent();
   refreshPalette();scheduleSave();
 }
 function refreshPalette(){
-  $$('#palette .hexbtn').forEach(b=>{const i=+b.dataset.i,p=PALETTE[i-1],f=b.firstChild;f.style.background=p.hex;f.style.color=p.ink;b.style.color=p.ink;b.classList.toggle('on',i===S.color);b.classList.toggle('used',counts[i]>0)});
+  $$('#palette .hexbtn, #palPop .hexbtn').forEach(b=>{const i=+b.dataset.i,p=PALETTE[i-1],f=b.firstChild;f.style.background=p.hex;f.style.color=p.ink;b.style.color=p.ink;b.classList.toggle('on',i===S.color);b.classList.toggle('used',counts[i]>0)});
   const p=PALETTE[S.color-1],big=$('#curBig');big.style.background=p.hex;big.style.color=p.ink;big.textContent=p.code;
   $('#curName').textContent=p.name;$('#curMeta').textContent=counts[S.color]?`${fmt(counts[S.color])} ${counts[S.color]===1?'conta':'contas'} no desenho`:'ainda não usada';
 }
+function openPalPop(){
+  $('#palPop').hidden=false;$('#palMore').setAttribute('aria-expanded','true');
+  const q=$('#palSearch');q.value='';filterPal('');setTimeout(()=>q.focus(),0);
+  const on=$('#palPop .hexbtn.on');if(on)on.scrollIntoView({block:'nearest'});
+}
+function closePalPop(){const pp=$('#palPop');if(pp.hidden)return;pp.hidden=true;$('#palMore').setAttribute('aria-expanded','false')}
+function filterPal(q){
+  q=q.trim().toLowerCase();let any=false;
+  $$('#palPop .hexbtn').forEach(b=>{const p=PALETTE[+b.dataset.i-1],ok=!q||p.code.toLowerCase()===q||p.code.toLowerCase().startsWith(q)||p.name.toLowerCase().includes(q);b.hidden=!ok;if(ok)any=true});
+  $$('#palPop .pgroup').forEach(g=>{g.hidden=!g.querySelector('.hexbtn:not([hidden])')});
+  $('#palEmpty').hidden=any;
+}
+$('#palMore').onclick=()=>{$('#palPop').hidden?openPalPop():closePalPop()};
+$('#palClose').onclick=closePalPop;
+$('#palSearch').addEventListener('input',e=>filterPal(e.target.value));
+$('#palSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){const f=$('#palPop .hexbtn:not([hidden])');if(f){f.click()}}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#palPop').hidden){closePalPop();e.stopPropagation();e.preventDefault()}},true);
+document.addEventListener('mousedown',e=>{const pp=$('#palPop');if(pp.hidden)return;if(!pp.contains(e.target)&&!e.target.closest('#palMore'))closePalPop()});
 
 /* =====================================================================
    Painel: Contas
@@ -1596,11 +1791,11 @@ function fmtCm(v){return v.toLocaleString('pt-BR',{maximumFractionDigits:1})}
 function plates(){return [Math.ceil(S.w/S.plate),Math.ceil(S.h/S.plate)]}
 function renderCounts(){
   $('#kTotal').textContent=fmt(total);
-  $('#kColors').innerHTML=`${usedColors}<em>/ 24</em>`;
+  $('#kColors').textContent=usedColors;
   $('#kGrid').textContent=`${S.w}×${S.h}`;
   const [pw,ph]=plates();
   $('#kReal').innerHTML=`${fmtCm(realCm(S.w))}×${fmtCm(realCm(S.h))}<em>cm</em>`;
-  const list=[];for(let v=1;v<=24;v++)if(counts[v])list.push(v);
+  const list=[];for(let v=1;v<=NCOL;v++)if(counts[v])list.push(v);
   if(S.sort==='count')list.sort((a,b)=>counts[b]-counts[a]||a-b);else list.sort((a,b)=>PALETTE[a-1].code.localeCompare(PALETTE[b-1].code));
   const max=Math.max(1,...list.map(v=>counts[v]));
   const box=$('#countList');
@@ -1746,7 +1941,7 @@ function scrollToRow(){
   if(top<stage.scrollTop+40||top>stage.scrollTop+stage.clientHeight-80)stage.scrollTo({top:top-stage.clientHeight/2,behavior:'smooth'});
 }
 function renderColorView(box){
-  const list=[];for(let v=1;v<=24;v++)if(counts[v])list.push(v);list.sort((a,b)=>counts[b]-counts[a]);
+  const list=[];for(let v=1;v<=NCOL;v++)if(counts[v])list.push(v);list.sort((a,b)=>counts[b]-counts[a]);
   box.innerHTML=`<div class="note" style="margin:0 0 8px">Escolha uma cor: só as contas dela que ainda faltam ficam destacadas no quadriculado. Clique nas contas para marcar como colocadas.</div>`+
     list.map(v=>{const p=PALETTE[v-1],d=doneCounts[v],n=counts[v];
       return `<button class="cfocus${S.asm.color===v?' on':''}" data-v="${v}"><span class="swb"><span class="sw" style="background:${p.hex};color:${p.ink}">${p.code}</span></span><span class="nm"><b>${p.name}</b><span class="mini"><i style="width:${d/n*100}%"></i></span></span><span class="fr">${fmt(n-d)}<small>faltam de ${fmt(n)}</small></span></button>`}).join('')+
@@ -2502,6 +2697,7 @@ async function writeCatalogue(dir,text){
   const cur=await (await fh.getFile()).text();
   const fresh=[...cur.matchAll(/^\{\s*id\s*:\s*("(?:[^"\\]|\\.)*")/gm)].map(m=>{try{return JSON.parse(m[1])}catch(e){return null}}).filter(id=>id&&!tplLoadedIds.has(id));
   if(fresh.length){const e=new Error('STALE');e.n=fresh.length;throw e}   // o arquivo tem moldes que esta página não carregou: não grava
+  {const m0=cur.match(/window\.TPL_BAKED\s*=\s*"([^"]*)"/);if(m0&&window.TPL_BAKED&&m0[1]!==window.TPL_BAKED){const e=new Error('STALE');e.n=0;throw e}}   // o arquivo foi regravado por fora (remessa, reorganização) depois que a página abriu: não grava
   try{   // cópia de segurança antes de gravar (se não der para copiar, não grava)
     const td=await dir.getDirectoryHandle('tools',{create:true}),bd=await td.getDirectoryHandle('backups',{create:true});
     const bf=await bd.getFileHandle(`templates-${stampNow()}.js`,{create:true});const w0=await bf.createWritable();await w0.write(cur);await w0.close();
@@ -2510,6 +2706,7 @@ async function writeCatalogue(dir,text){
   }catch(e){throw new Error('BACKUP')}
   const w=await fh.createWritable();await w.write(text);await w.close();
   const back=await (await fh.getFile()).text();if(back!==text)throw new Error('VERIFY');
+  {const m1=text.match(/window\.TPL_BAKED\s*=\s*"([^"]*)"/);if(m1)window.TPL_BAKED=m1[1]}   // a página passa a ser a dona do arquivo gravado
 }
 /* depois de gravado, o que estava só no navegador passa a vir do próprio templates.js */
 function applyBaked({items,cfg,idMap,removed}){
@@ -2559,7 +2756,7 @@ $('#bakeGo').onclick=async()=>{
     const m=e&&e.message;
     if(e&&e.name==='AbortError')toast('Gravação cancelada');
     else if(m==='STALE'){
-      $('#bakeStatus').innerHTML=`<b>Não gravei nada.</b> O arquivo <b>templates.js</b> tem <b>${e.n} molde${e.n>1?'s':''}</b> que esta página ainda não conhece (foram acrescentados depois que ela abriu). Se eu gravasse agora, ${e.n>1?'eles seriam apagados':'ele seria apagado'}. <b>Recarregue a página (Ctrl+F5)</b> e grave de novo: o que você mudou aqui (exclusões, nomes, ajustes) continua guardado.`;
+      $('#bakeStatus').innerHTML=e.n?`<b>Não gravei nada.</b> O arquivo <b>templates.js</b> tem <b>${e.n} molde${e.n>1?'s':''}</b> que esta página ainda não conhece (foram acrescentados depois que ela abriu). Se eu gravasse agora, ${e.n>1?'eles seriam apagados':'ele seria apagado'}. <b>Recarregue a página (Ctrl+F5)</b> e grave de novo: o que você mudou aqui (exclusões, nomes, ajustes) continua guardado.`:`<b>Não gravei nada.</b> O arquivo <b>templates.js</b> foi alterado por fora (uma remessa nova ou uma reorganização do catálogo) depois que esta página abriu; se eu gravasse agora, essas mudanças seriam desfeitas. <b>Recarregue a página (Ctrl+F5)</b> e grave de novo: o que você mudou aqui continua guardado.`;
       toast('Recarregue a página (Ctrl+F5) antes de gravar: há moldes novos no arquivo');
     }
     else if(m==='NOFILE')toast('Essa pasta não tem o templates.js — escolha a pasta do projeto (onde está o index.html)');
@@ -2614,7 +2811,7 @@ $('#newGo').onclick=()=>{
 /* ---------- ajustar cores ---------- */
 function openColors(){
   const box=$('#colList');
-  box.innerHTML=PALETTE.map((p,i)=>`<div class="colrow"><div class="sw" style="background:${p.hex}"></div><div><b>${p.code}</b> <span style="color:var(--muted)">${p.name}</span></div><input type="color" value="${p.hex.toLowerCase()}" data-i="${i}" aria-label="Cor ${p.code}"></div>`).join('');
+  box.innerHTML=PALETTE.map((p,i)=>`<div class="colrow"><div class="sw" style="background:${p.hex}"></div><div><b>${p.code}</b>${p.est?' <span title="cor estimada da foto do anúncio" style="color:var(--muted)">~</span>':''} <span style="color:var(--muted)">${p.name}</span></div><input type="color" value="${p.hex.toLowerCase()}" data-i="${i}" aria-label="Cor ${p.code}"></div>`).join('');
   box.oninput=e=>{const inp=e.target.closest('input[type=color]');if(!inp)return;const i=+inp.dataset.i;overrides[PALETTE[i].code]=inp.value.toUpperCase();derivePalette();inp.parentElement.querySelector('.sw').style.background=inp.value;refreshAll();scheduleSave()};
   $('#dlgColors').showModal();
 }
@@ -2666,7 +2863,7 @@ function loadImageFile(f){
       isPix=!!(g&&g.ok&&g.W<=150&&g.H<=150);
     }catch(e){}
     $('#impPixel').checked=isPix;$('#impPx').value='';
-    if(isPix){$('#impDither').checked=false;$('#impColors').value=24;$('#impColorsO').textContent=24}
+    if(isPix){$('#impDither').checked=false;$('#impColors').value=NCOL;$('#impColorsO').textContent=NCOL}
     runImport();
   };
   img.onerror=()=>toast('Não consegui abrir essa imagem');
@@ -2801,7 +2998,7 @@ function runImport(){
     }
   }
   if(!$('#impDither').checked)snapColors(px,empty,W,H,22);
-  let allowed=[];for(let v=1;v<=24;v++)allowed.push(v);
+  let allowed=[];for(let v=1;v<=NCOL;v++)allowed.push(v);
   if($('#impStock').checked&&Object.keys(S.stock).length){const a=allowed.filter(v=>(S.stock[PALETTE[v-1].code]||0)>0);if(a.length)allowed=a}
   const nearCache=new Map();
   const nearest=(r,g,b,set)=>{
@@ -2823,7 +3020,7 @@ function runImport(){
   };
   let res=quant(allowed,false);
   const maxC=+$('#impColors').value;
-  const tally=new Uint32Array(25);res.forEach(v=>{if(v)tally[v]++});
+  const tally=new Uint32Array(NCOL+1);res.forEach(v=>{if(v)tally[v]++});
   let used=allowed.filter(v=>tally[v]).sort((a,b)=>tally[b]-tally[a]);
   if(used.length>maxC)used=used.slice(0,maxC);
   res=quant(used.length?used:allowed,$('#impDither').checked);
@@ -2837,11 +3034,11 @@ function runImport(){
   imp.result={w:W,h:H,grid:res};
   const cvp=$('#impPreview'),sc=clamp(Math.floor(420/Math.max(W,H)),3,14);
   thumb(cvp,W,H,res,sc*Math.max(W,H));
-  const t2=new Uint32Array(25);res.forEach(v=>{if(v)t2[v]++});
+  const t2=new Uint32Array(NCOL+1);res.forEach(v=>{if(v)t2[v]++});
   $('#impInfo').textContent=note+`${fmt(res.reduce((s,v)=>s+(v?1:0),0))} contas · ${t2.slice(1).filter(Boolean).length} cores · ${W}×${H} (${fmtCm(realCm(W))}×${fmtCm(realCm(H))} cm)`;
 }
 $('#impPixel').addEventListener('change',()=>{
-  if($('#impPixel').checked){$('#impDither').checked=false;$('#impColors').value=24;$('#impColorsO').textContent=24}
+  if($('#impPixel').checked){$('#impDither').checked=false;$('#impColors').value=NCOL;$('#impColorsO').textContent=NCOL}
   runImport();
 });
 $('#impPx').addEventListener('input',runImport);
@@ -2894,7 +3091,7 @@ function renderOffscreen(cs,{guide=false}={}){
     for(let k=0;k<S.w;k++){const n=k+1;if(n===1||n%5===0){x.fillText(n,m+k*cs+cs/2,m*.5);x.fillText(n,m+k*cs+cs/2,m+S.h*cs+m*.5)}}
     for(let k=0;k<S.h;k++){const n=k+1;if(n===1||n%5===0){x.fillText(n,m*.5,m+k*cs+cs/2);x.fillText(n,m+S.w*cs+m*.5,m+k*cs+cs/2)}}
     // legenda
-    const list=[];for(let v=1;v<=24;v++)if(counts[v])list.push(v);list.sort((a,b)=>counts[b]-counts[a]);
+    const list=[];for(let v=1;v<=NCOL;v++)if(counts[v])list.push(v);list.sort((a,b)=>counts[b]-counts[a]);
     const top=m*2+S.h*cs,colW=(W-m*2)/3;x.textAlign='left';
     list.forEach((v,i)=>{const p=PALETTE[v-1],cx=m+(i%3)*colW,cy=top+Math.floor(i/3)*cs*1.5;
       x.fillStyle=p.hex;x.fillRect(cx,cy,cs*1.2,cs*1.2);x.strokeStyle='rgba(0,0,0,.35)';x.lineWidth=1;x.strokeRect(cx,cy,cs*1.2,cs*1.2);
@@ -2907,7 +3104,7 @@ function renderOffscreen(cs,{guide=false}={}){
 $('#mPng').onclick=()=>renderOffscreen(Math.max(8,Math.min(28,Math.floor(2400/Math.max(S.w,S.h))))).toBlob(b=>download(safeName()+'.png',b));
 $('#mGuide').onclick=()=>{if(!total){toast('Faça um desenho primeiro');return}renderOffscreen(Math.max(20,Math.min(36,Math.floor(3000/Math.max(S.w,S.h)))),{guide:true}).toBlob(b=>download(safeName()+'-guia.png',b))};
 $('#mList').onclick=async()=>{
-  const list=[];for(let v=1;v<=24;v++)if(counts[v])list.push(v);list.sort((a,b)=>counts[b]-counts[a]);
+  const list=[];for(let v=1;v<=NCOL;v++)if(counts[v])list.push(v);list.sort((a,b)=>counts[b]-counts[a]);
   const txt=`${S.name} — ${S.w}×${S.h}, ${total} contas\n`+list.map(v=>`${PALETTE[v-1].code} ${PALETTE[v-1].name}: ${counts[v]}`).join('\n');
   try{await navigator.clipboard.writeText(txt);toast('Lista copiada')}catch(e){toast('Não consegui copiar')}
 };

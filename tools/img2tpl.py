@@ -12,12 +12,8 @@ import numpy as np
 from PIL import Image
 
 TPL = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'templates.js')
-PAL = [('B3','#7FC79C'),('C3','#C3E5F3'),('D9','#C8C4E4'),('E2','#F1C4D1'),('G1','#E4C7B5'),('A4','#EBC22F'),
-       ('B5','#5FA66E'),('C5','#55BEDB'),('D6','#A89BC6'),('E4','#EA9BB8'),('G5','#D99479'),('A6','#E9A23B'),
-       ('B8','#3F8761'),('C8','#6B98D3'),('D7','#75609A'),('F5','#BD3A4B'),('G7','#8F5E50'),('A7','#EC8546'),
-       ('H1','#E4E7EA'),('H2','#FFFFFF'),('H3','#B5B8BE'),('H4','#8A8D93'),('H5','#5F6065'),('H7','#2E2E32')]
-LETTER = {'H7':'k','H5':'d','H4':'m','H3':'l','H1':'i','H2':'w','F5':'r','E4':'p','E2':'q','A7':'o','A6':'a','A4':'y',
-          'G1':'s','G5':'t','G7':'n','C8':'b','C5':'c','C3':'e','D7':'u','D6':'v','D9':'x','B3':'g','B5':'f','B8':'h'}
+# a paleta vem de data/palette.json (palette.py): BEADPAL=24 (padrão, 24 cores do kit antigo) ou BEADPAL=120
+from palette import PAL, LETTER
 RGB = np.array([[int(h[i:i+2], 16) for i in (1, 3, 5)] for _, h in PAL], float)
 
 def rgb2lab(a):
