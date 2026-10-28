@@ -452,7 +452,19 @@ dialog{border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
 .gsearch input{flex:1;min-width:0;height:100%;border:0;background:transparent;font-size:14px;color:var(--ink);outline:none}
 .gsearch:focus-within{border-color:var(--accent);background:var(--panel);box-shadow:0 0 0 3px var(--accent-soft)}
 #dlgTemplates .tplbody{flex:1;min-height:0;height:auto;padding:0;display:flex;flex-direction:column;overflow:hidden}
-#dlgTemplates .tpl-wrap{width:100%;max-width:1368px;margin:0 auto;padding:18px 24px 6px}
+#dlgTemplates .tpl-wrap{width:100%;max-width:1368px;margin:0 auto;padding:12px 24px 6px}
+/* abas por tamanho (nº de placas) */
+.plate-tabs{flex:none;width:100%;max-width:1368px;margin:0 auto;padding:10px 24px 0;display:flex;align-items:flex-end;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:none}
+.plate-tabs::-webkit-scrollbar{display:none}
+.plate-tabs .ptab{flex:none;display:inline-flex;align-items:center;gap:7px;border:0;background:transparent;color:var(--muted);font-weight:600;font-size:14px;padding:9px 14px 10px;border-radius:10px 10px 0 0;border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.plate-tabs .ptab:hover{color:var(--ink);background:var(--panel-2)}
+.plate-tabs .ptab.on{color:var(--ink);border-bottom-color:var(--accent)}
+.plate-tabs .ptab small{font-weight:600;font-size:11.5px;color:var(--muted);background:var(--panel-2);border:1px solid var(--line);border-radius:999px;padding:1px 7px;min-width:22px;text-align:center}
+.plate-tabs .ptab.on small{background:var(--accent-soft);border-color:transparent;color:var(--ink)}
+.plate-tabs .ptab.off{opacity:.55}
+.plate-tabs .pt-note{margin-left:auto;flex:none;align-self:center;padding:0 0 8px 14px;font-size:12px;color:var(--muted);white-space:nowrap}
+.plate-grid{display:inline-grid;gap:1.5px;vertical-align:-2px}
+.plate-grid i{display:block;width:6px;height:6px;border-radius:1.5px;background:currentColor;opacity:.75}
 #dlgTemplates .tsec h3{background:var(--bg)}
 #dlgTemplates .cblock,#dlgTemplates .tcard{background:var(--panel);border-radius:16px}
 #dlgTemplates .cblock>header{flex-wrap:nowrap;gap:8px}
@@ -499,7 +511,8 @@ dialog{border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
   .dlg header{flex-wrap:wrap;gap:8px;padding:12px 14px}
   .dlg .body{padding:14px} .dlg footer{padding:12px 14px;flex-wrap:wrap}
   #dlgTemplates .gal-head{padding:10px 14px}
-  #dlgTemplates .tpl-wrap{padding:12px 14px 4px}
+  #dlgTemplates .tpl-wrap{padding:10px 14px 4px}
+  .plate-tabs{padding:8px 14px 0}.plate-tabs .pt-note{display:none}.plate-tabs .ptab{padding:8px 11px 9px;font-size:13.5px}
   .tgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px} .tcard{padding:8px} .tcard .th{height:104px}
   .tcard .tmain b{font-size:12.5px} .cr{grid-template-columns:34px minmax(0,1fr) auto auto auto;row-gap:4px} .cr .cnt{display:none}
   .presets{grid-template-columns:1fr} .cols2{grid-template-columns:1fr}
@@ -851,6 +864,7 @@ dialog{border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
     </div>
   </header>
   <div class="body tplbody" id="tplDlgBody">
+    <div class="plate-tabs" id="tplPlates" role="tablist" aria-label="Tamanho do molde, em placas"></div>
     <div class="tpl-wrap">
       <nav class="tpl-side" id="tplSide" aria-label="Categorias"></nav>
       <div class="tpl-main" id="tplMain">
@@ -974,7 +988,7 @@ dialog{border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
 <input type="file" id="fileImg" accept="image/*" hidden>
 <div id="toast" role="status"></div>
 
-<script>(function(){var b='20261027c',v=b;try{var s=JSON.parse(localStorage.getItem('beadstudio.tplv')||'null');if(s&&s.base===b)v=b+'-'+s.t}catch(e){}window.TPL_BASE_V=b;document.write('<script src="templates.js?v='+v+'"><\/script>')})();</script>
+<script>(function(){var b='20261028b',v=b;try{var s=JSON.parse(localStorage.getItem('beadstudio.tplv')||'null');if(s&&s.base===b)v=b+'-'+s.t}catch(e){}window.TPL_BASE_V=b;document.write('<script src="templates.js?v='+v+'"><\/script>')})();</script>
 <script>
 'use strict';
 /* =====================================================================
@@ -2183,7 +2197,31 @@ function thumb(canvas,w,h,grid,max){
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){const v=grid[y*w+x];if(!v)continue;c.fillStyle=PALETTE[v-1].hex;
     if(cs>=5){c.beginPath();c.arc(x*cs+cs/2,y*cs+cs/2,cs*.46,0,TAU);c.fill();c.lineWidth=1;c.strokeStyle='rgba(0,0,0,.42)';c.stroke()}else c.fillRect(x*cs,y*cs,cs,cs)}
 }
-let tplQuery='', tplSelMode=false, tplShownIds=[];
+let tplQuery='', tplSelMode=false, tplShownIds=[], tplAutoPlate=false;
+/* abas por nº de placas: '1' | '2' | '3' | '4' | '5' (5 ou mais). Cada molde aparece SÓ na aba do seu tamanho (não existe aba "Todas": pedido do usuário).
+   Um molde "tem N placas" pela grade da placa do usuário (S.plate x S.plate pinos). */
+const PLATE_KEY='beadstudio.plates', PLATE_TABS=['1','2','3','4','5'];
+let tplPlates=lsGet(PLATE_KEY,'1');if(!PLATE_TABS.includes(tplPlates))tplPlates='1';
+const platesOf=t=>Math.ceil(t.w/S.plate)*Math.ceil(t.h/S.plate);
+const plateKey=t=>{const n=platesOf(t);return n>=5?'5':String(Math.max(1,n))};
+function setPlates(v){tplPlates=PLATE_TABS.includes(v)?v:'1';lsSet(PLATE_KEY,tplPlates);renderTemplates();$('#tplMain').scrollTop=0}
+const plateLabel=k=>k==='1'?'1 placa':k==='5'?'5 ou mais':k+' placas';
+/* desenhinho das placas (1 quadrado; 2 lado a lado; 3 em fila; 4 em 2x2) */
+const plateIcon=k=>{const g={1:[1,1],2:[2,1],3:[3,1],4:[2,2],5:[3,2]}[k];if(!g)return '';return `<span class="plate-grid" style="grid-template-columns:repeat(${g[0]},6px)" aria-hidden="true">${'<i></i>'.repeat(g[0]*g[1])}</span>`};
+function renderPlateTabs(counts){
+  const box=$('#tplPlates');
+  const keys=PLATE_TABS.filter(k=>k!=='5'||counts['5']>0||tplPlates==='5');
+  box.innerHTML=keys.map(k=>{const n=counts[k]||0;const tip=k==='1'?`Cabem numa placa só (até ${S.plate}×${S.plate} pinos)`:`Ocupam ${k==='5'?'5 ou mais':k} placas de ${S.plate}×${S.plate} pinos`;
+    return `<button type="button" role="tab" class="ptab${k===tplPlates?' on':''}${n?'':' off'}" data-p="${k}" aria-selected="${k===tplPlates}" title="${esc(tip)}">${plateIcon(k)}<span>${plateLabel(k)}</span><small>${fmt(n)}</small></button>`}).join('')
+    +`<span class="pt-note">placa de ${S.plate}×${S.plate} pinos</span>`;
+  const on=box.querySelector('.ptab.on');if(on)box.scrollLeft=Math.max(0,on.offsetLeft-box.clientWidth/2+on.offsetWidth/2);   // no celular a aba escolhida fica à vista
+}
+$('#tplPlates').addEventListener('click',e=>{const b=e.target.closest('.ptab');if(b)setPlates(b.dataset.p)});
+$('#tplPlates').addEventListener('keydown',e=>{
+  if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return;
+  const tabs=$$('#tplPlates .ptab'),i=tabs.indexOf(document.activeElement);if(i<0)return;
+  e.preventDefault();const n=tabs[(i+(e.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length];n.focus();setPlates(n.dataset.p);const nb=$$('#tplPlates .ptab').find(x=>x.dataset.p===n.dataset.p);if(nb)nb.focus();
+});
 const tplSel=new Set();
 const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2215,7 +2253,7 @@ function captureNav(t){
   if($('#dlgTemplates').open){
     // blocos com muitos moldes rolam por dentro: guarda também a rolagem do bloco onde estava o molde clicado
     const el=$('#tplSections').querySelector(`[data-id="${CSS.escape(t.id)}"]`),th=el&&el.closest('.cthumbs'),blk=th&&th.closest('.cblock');
-    return {from:'gallery',under:galleryUnder,cat:tplCat,query:tplQuery,view:tplView,main:$('#tplMain').scrollTop,side:$('#tplSide').scrollTop,id:t.id,inner:blk?{cat:blk.dataset.cat,top:th.scrollTop}:null};
+    return {from:'gallery',under:galleryUnder,cat:tplCat,query:tplQuery,view:tplView,plates:tplPlates,main:$('#tplMain').scrollTop,side:$('#tplSide').scrollTop,id:t.id,inner:blk?{cat:blk.dataset.cat,top:th.scrollTop}:null};
   }
   if(view==='home')return {from:'home',query:homeQ,home:$('#home').scrollTop,row:$('#homeNewRow').scrollLeft,id:t.id};
   return null;
@@ -2236,7 +2274,7 @@ function applyRestore(){
     const put=()=>{$('#home').scrollTop=nb.home;$('#homeNewRow').scrollLeft=nb.row;flashItem($('#home'),nb.id)};
     put();requestAnimationFrame(put);
   }else{
-    tplQuery=nb.query;tplCat=nb.cat;tplView=nb.view;
+    tplQuery=nb.query;tplCat=nb.cat;tplView=nb.view;if(nb.plates&&PLATE_TABS.includes(nb.plates))tplPlates=nb.plates;
     openTemplates();
     const put=()=>{
       $('#tplMain').scrollTop=nb.main;$('#tplSide').scrollTop=nb.side;
@@ -2353,7 +2391,12 @@ function renderTemplates(){
   const cfg=loadCatCfg(),cats=catList(cfg).filter(c=>!c.hidden);
   const all=decodeTemplates(),list=all.filter(t=>!t.trashed),trash=all.filter(t=>t.trashed),q=norm(tplQuery.trim());
   const nameOfCat=id=>(catInfo(id,cfg)||{name:''}).name;
-  const byQuery=all.filter(t=>!q||norm(t.name+' '+nameOfCat(t.cat)).includes(q));
+  const byText=all.filter(t=>!q||norm(t.name+' '+nameOfCat(t.cat)).includes(q));
+  // abas por nº de placas: as contagens respeitam a busca; o filtro vale para tudo (blocos, lista, barra lateral) menos "Excluídos"
+  const pcount={};byText.forEach(t=>{if(!t.trashed){const k=plateKey(t);pcount[k]=(pcount[k]||0)+1}});
+  if(tplAutoPlate){tplAutoPlate=false;if(!pcount[tplPlates]){const f=PLATE_TABS.find(k=>pcount[k]);if(f)tplPlates=f}}   // aberta por uma busca: vai para a primeira aba que tem resultado
+  const byQuery=byText.filter(t=>plateKey(t)===tplPlates);                  // cada molde só aparece na aba do seu tamanho (inclui os excluídos)
+  renderPlateTabs(pcount);
   const catN=id=>byQuery.filter(t=>t.cat===id).length;
   const hasMine=list.some(t=>t.cat==='mine');
   const blocks=tplView==='blocks';
@@ -2365,7 +2408,8 @@ function renderTemplates(){
   cats.forEach(c=>{if(!c.builtin||list.some(t=>t.cat===c.id))entries.push({id:c.id,name:c.name,icon:c.icon,n:catN(c.id)})});
   if(trash.length){entries.push({sep:1});entries.push({id:'trash',name:'Excluídos',icon:'trash',n:catN('trash')})}
   if(tplCat!=='all'&&!entries.some(e=>e.id===tplCat))tplCat='all';
-  $('#tplTotal').textContent=`${fmt(list.length)} ${list.length===1?'molde':'moldes'}`;
+  const nShown=byQuery.filter(t=>!t.trashed).length;
+  $('#tplTotal').textContent=`${fmt(nShown)} de ${fmt(list.length)} moldes`;
   const side=$('#tplSide');
   side.innerHTML=entries.map(e=>e.sep?'<div class="sep"></div>':`<button class="cat-btn ${esc(e.id)}${e.id===tplCat?' on':''}${e.n?'':' off'}" data-cat="${esc(e.id)}"><span class="ico">${icon(e.icon,17)}</span><span>${esc(e.name)}</span><small>${e.n}</small></button>`).join('')
     +`<div class="sep"></div><button class="cat-btn org" data-org="1" title="Renomear, reordenar, criar e remover categorias"><span class="ico">${icon('folder',17)}</span><span>Organizar categorias</span></button>`;
@@ -2375,11 +2419,13 @@ function renderTemplates(){
   tplShownIds=shown.filter(t=>!t.trashed).map(t=>t.id);
   const box=$('#tplSections');box.innerHTML='';
   const empty=$('#tplEmpty');
-  empty.hidden=shown.length>0||(blocks&&!q);
+  empty.hidden=shown.length>0||(blocks&&!q&&tplPlates==='1');
   empty.innerHTML=list.length===0
     ? '<b>Ainda não há moldes.</b><br>Abra <b>Gerenciar → Criar um molde novo</b>, ou converta uma imagem em <b>Imagem → contas</b> (ou cole com Ctrl+V), e guarde com <b>Salvar molde</b>.'
+    : !shown.length&&tplPlates!=='1'||(q&&!shown.length)?`Nenhum molde de <b>${plateLabel(tplPlates)}</b>${q?' com essa busca':tplCat!=='all'&&tplCat!=='trash'?' nesta categoria':''}.${PLATE_TABS.filter(k=>k!==tplPlates&&pcount[k]).map(k=>` <button type="button" class="btn sm" data-goplate="${k}">${plateLabel(k)} (${pcount[k]})</button>`).join('')}`
     : (tplCat!=='all'&&tplCat!=='trash'&&!q?'Esta categoria está vazia. Arraste moldes para ela, ou use ✎ num molde (ou “Selecionar”) para movê-los para cá.':'Nenhum molde encontrado.');
-  if(blocks){renderBoard(box,byQuery,cats,hasMine,cfg,q)}
+  empty.querySelectorAll('[data-goplate]').forEach(b=>b.onclick=()=>setPlates(b.dataset.goplate));
+  if(blocks){renderBoard(box,byQuery,cats,hasMine,cfg,q||tplPlates!=='1')}
   else{
     // seções: uma por categoria quando está em "Todos"; só a escolhida quando se entra numa categoria
     const secCats=tplCat==='all'?[...(hasMine?['mine']:[]),...cats.map(c=>c.id)]:[tplCat];
@@ -2776,7 +2822,7 @@ function openTemplates(){
 }
 /* abre a galeria de moldes: do zero (tudo), numa categoria ou já com uma busca */
 function openGallery({cat,query}={}){
-  tplQuery=query||'';tplCat=cat||'all';
+  tplQuery=query||'';tplCat=cat||'all';tplAutoPlate=!!(query&&query.trim());
   if(cat){tplView='list';lsSet('beadstudio.tplview','list')}
   if($('#dlgTemplates').open)$('#tplSearch').value=tplQuery;
   openTemplates();
@@ -3203,7 +3249,7 @@ function renderHome(){
   }
   // novidades = os últimos moldes do catálogo
   const row=$('#homeNewRow');row.innerHTML='';
-  const fresh=all.slice(-12).reverse();
+  const fresh=all.filter(t=>plateKey(t)==='1').slice(-12).reverse();   // só os de 1 placa (a prioridade); os maiores ficam nas abas deles
   $('#homeNew').hidden=!fresh.length;
   fresh.forEach(t=>row.appendChild(homeTile(t)));
   // categorias com mais moldes

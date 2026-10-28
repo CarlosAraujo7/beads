@@ -12,7 +12,7 @@ nome e categoria; no templates.js o campo "group" é apenas o nome da categoria.
   * categoria = a que tem o nome da série (inclusive categorias que o usuário criou ou renomeou), senão a franquia
     conhecida (tools/franchises.py), senão a mais usada por moldes da mesma série; série nova vira categoria nova;
     séries genéricas ("Outros"...) vão para "Outros";
-  * moldes com mais de 50 em algum lado são REDUZIDOS para 1 placa (shrink.py) — o catálogo só tem moldes de 1 placa e de 120 cores (--keep-big desliga);
+  * moldes com mais de 50 em algum lado são REDUZIDOS para 1 placa (shrink.py), a menos que o item traga um 4º elemento {"plates": N} (molde de 2, 3 ou 4 placas de propósito; a prioridade é 1 placa, mais só quando fica feio ou impossível) (--keep-big desliga);
   * faz cópia de segurança do templates.js em tools/backups/ antes de gravar.
 """
 import os, sys, json, argparse, unicodedata
@@ -71,7 +71,8 @@ def ensure_cat(cat, label):
 added = 0; skipped = 0; replaced = 0
 for f in a.files:
     path = f if os.path.exists(f) else os.path.join(HERE, 'data', f)
-    for n, g, rows in json.load(open(path, encoding='utf-8')):
+    for item in json.load(open(path, encoding='utf-8')):
+        n, g, rows = item[:3]; opts = item[3] if len(item) > 3 else {}      # 4º item opcional: {"plates": N} = molde de N placas de propósito (não reduz para 1 placa)
         if n in names:
             if a.replace:
                 t = next(x for x in items if x['name'] == n)
@@ -90,9 +91,13 @@ for f in a.files:
             # série = franquia: vai para a categoria dela; se ainda não existe na galeria, a categoria é criada
             cat = by_name(g) or F.GROUP_MAP.get(g) or (by_group[g].most_common(1)[0][0] if g in by_group else tplfile.slug(g))
             ensure_cat(cat, g)
-        if not a.keep_big and (len(rows) > 50 or max(len(r) for r in rows) > 50):
-            old_dim = (len(rows[0]), len(rows)); rows = shrink.shrink(rows, 50, 'bias', empty_at=0.6)
-            print('reduzido para 1 placa:', n, '%dx%d -> %dx%d' % (old_dim[0], old_dim[1], len(rows[0]), len(rows)))
+        want = int(opts.get('plates', 1)); pl = lambda r: -(-max(len(x) for x in r) // 50) * -(-len(r) // 50)
+        if not a.keep_big and pl(rows) > want:
+            # prioridade é 1 placa; só fica com mais de uma quem pediu (opts.plates) e, mesmo assim, no máximo `want` placas
+            old_dim = (len(rows[0]), len(rows)); size = 50 if want == 1 else 100
+            rows = shrink.shrink(rows, size, 'bias', empty_at=0.6)
+            while pl(rows) > want and size > 50: size -= 1; rows = shrink.shrink(rows, size, 'bias', empty_at=0.6)
+            print('reduzido para %d placa(s):' % want, n, '%dx%d -> %dx%d' % (old_dim[0], old_dim[1], len(rows[0]), len(rows)))
         grp = cat_name(cat, g)
         base = tplfile.slug(n); i = base; k = 2
         while i in ids: i = '%s-%d' % (base, k); k += 1

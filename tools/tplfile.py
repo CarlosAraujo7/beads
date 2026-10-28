@@ -7,7 +7,7 @@
 import os, re, json, unicodedata, datetime, shutil
 
 _STR = r'"(?:[^"\\]|\\.)*"'
-ITEM_RE = re.compile(r'\{id:(%s),cat:(%s),group:(%s),name:(%s),rows:\[(.*?)\]\}' % (_STR, _STR, _STR, _STR), re.S)
+ITEM_RE = re.compile(r'\{id:(%s),cat:(%s),group:(%s),name:(%s),rows:\[(.*?)\n\]\}' % (_STR, _STR, _STR, _STR), re.S)
 HEADER = [
     '// Templates de beads - cada letra e um codigo de cor Pindou (veja TPL_LEGEND).',
     '// Formato: {id:"x", cat:"categoria", group:"Serie", name:"Nome", rows:["....kk....", ...]}  ("." = vazio)',
