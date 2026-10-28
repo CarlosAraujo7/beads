@@ -22,12 +22,14 @@ from collections import Counter
 import tplfile
 import franchises as F
 import shrink
+import loose
 
 ap = argparse.ArgumentParser()
 ap.add_argument('files', nargs='+')
 ap.add_argument('--dry', action='store_true')
 ap.add_argument('--readd', action='store_true', help='recoloca também os que o usuário excluiu antes')
 ap.add_argument('--replace', action='store_true', help='nome que já existe: TROCA as linhas do molde (mantém id, categoria e posição). Use para refazer as versões de 120 cores quando os hex da paleta forem corrigidos; apaga ajustes que o usuário gravou nesses moldes')
+ap.add_argument('--fill-holes', action='store_true', help='preenche buraquinhos (vazios de até 3 contas cercados por contas): use nas remessas de ILUSTRAÇÃO (convert4); em pixel art copiado de gráfico o vazio pode ser de propósito')
 ap.add_argument('--keep-big', action='store_true', help='NÃO reduz para 1 placa (por padrão todo molde novo com mais de 50 em algum lado é reduzido: política do catálogo desde 2026-10-27)')
 ap.add_argument('--templates', default=os.path.join(os.path.dirname(HERE), 'templates.js'))
 a = ap.parse_args()
@@ -68,11 +70,14 @@ def ensure_cat(cat, label):
     cfg['order'] = order[:at] + [cat] + order[at:] + ['other']
     print('categoria nova criada na galeria:', F.NAME_BY_ID.get(cat, label))
 
-added = 0; skipped = 0; replaced = 0
+added = 0; skipped = 0; replaced = 0; nloose = 0
 for f in a.files:
     path = f if os.path.exists(f) else os.path.join(HERE, 'data', f)
     for item in json.load(open(path, encoding='utf-8')):
         n, g, rows = item[:3]; opts = item[3] if len(item) > 3 else {}      # 4º item opcional: {"plates": N} = molde de N placas de propósito (não reduz para 1 placa)
+        if a.fill_holes: rows = loose.fill_pinholes(rows)[0]
+        _lc = loose.loose_count(rows)
+        if _lc: rows = loose.fix_loose(rows); nloose += _lc                 # regra do usuário: NUNCA contas soltas (loose.py)
         if n in names:
             if a.replace:
                 t = next(x for x in items if x['name'] == n)
@@ -98,12 +103,14 @@ for f in a.files:
             rows = shrink.shrink(rows, size, 'bias', empty_at=0.6)
             while pl(rows) > want and size > 50: size -= 1; rows = shrink.shrink(rows, size, 'bias', empty_at=0.6)
             print('reduzido para %d placa(s):' % want, n, '%dx%d -> %dx%d' % (old_dim[0], old_dim[1], len(rows[0]), len(rows)))
+            rows = loose.fix_loose(rows)
         grp = cat_name(cat, g)
         base = tplfile.slug(n); i = base; k = 2
         while i in ids: i = '%s-%d' % (base, k); k += 1
         ids.add(i); names.add(n)
         items.append({'id': i, 'cat': cat, 'group': grp, 'name': n, 'rows': rows}); by_group.setdefault(grp, Counter())[cat] += 1
         added += 1
+if nloose: print('contas soltas removidas/ligadas nos itens recebidos:', nloose)
 print('acrescentados:', added, '| pulados:', skipped, '| trocados:', replaced, '| total:', len(items))
 if a.dry: print('(--dry: nada foi gravado)')
 elif added or replaced:
