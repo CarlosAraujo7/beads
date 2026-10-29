@@ -465,6 +465,38 @@ dialog{border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
 .plate-tabs .pt-note{margin-left:auto;flex:none;align-self:center;padding:0 0 8px 14px;font-size:12px;color:var(--muted);white-space:nowrap}
 .plate-grid{display:inline-grid;gap:1.5px;vertical-align:-2px}
 .plate-grid i{display:block;width:6px;height:6px;border-radius:1.5px;background:currentColor;opacity:.75}
+.view-3d .tpl-wrap{grid-template-columns:minmax(0,1fr)} .view-3d .tpl-side,.view-3d #tplSections,.view-3d #tplEmpty,.view-3d #tplBar{display:none!important}
+#tplProjects[hidden]{display:none}
+.pj-intro{margin:6px 0 14px;color:var(--muted);font-size:13.5px;max-width:780px}
+.pj-card .th{height:150px;overflow:hidden}
+.stage3d{perspective:800px;display:grid;place-items:center;width:100%;height:100%;user-select:none}
+.box3d{position:relative;transform-style:preserve-3d}
+.box3d{width:0;height:0}
+.box3d .face{position:absolute;left:0;top:0;display:block;backface-visibility:visible}
+#dlgProject{width:min(1180px,96vw);max-width:96vw;height:min(820px,94vh);height:min(820px,94dvh)}
+#dlgProject .dlg{height:100%;max-height:none}
+#dlgProject .pjbody{display:grid;grid-template-columns:minmax(300px,1fr) minmax(320px,1fr);gap:22px;align-items:start}
+.pj-stage{height:min(54vh,430px);border:1px solid var(--line);border-radius:16px;background:var(--thumb);overflow:hidden}
+.pj-ctl{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:10px;font-size:13px;color:var(--muted)}
+.pj-ctl input[type=range]{accent-color:var(--accent);vertical-align:middle;width:120px}
+.pj-info h3{margin:18px 0 8px;font-size:14px}
+.pj-chips{display:flex;flex-wrap:wrap;gap:6px}
+.pj-chips span{padding:3px 10px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line);font-size:12px}
+.pj-piece{display:flex;align-items:center;gap:12px;padding:8px;border:1px solid var(--line);border-radius:12px;background:var(--panel-2);margin-bottom:8px}
+.pj-piece .pth{flex:none;width:72px;height:72px;display:grid;place-items:center;background:var(--thumb);border-radius:8px}
+.pj-piece .pin{flex:1;min-width:0} .pj-piece .pin small{display:block;color:var(--muted)}
+.pj-cols{display:flex;flex-wrap:wrap;gap:6px}
+.pj-col{display:inline-flex;align-items:center;gap:6px;padding:3px 9px 3px 4px;border:1px solid var(--line);border-radius:999px;font-size:12px}
+.pj-col i{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.3)}
+.pj-steps{padding-left:20px;margin:0;display:grid;gap:8px;font-size:13.5px;line-height:1.45}
+@media(max-width:760px){#dlgProject .pjbody{grid-template-columns:minmax(0,1fr)}.pj-stage{height:300px}}
+.pjchip{flex:none;display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:6px 12px;background:var(--panel-2);border-bottom:1px solid var(--line);font-size:12.5px}
+.pjchip[hidden]{display:none}
+.pjchip .pj-t{color:var(--muted);padding:0 4px;white-space:nowrap}
+.pjchip button{border:1px solid var(--line);background:var(--panel-2);color:var(--ink);border-radius:999px;padding:4px 11px;font-size:12.5px;font-weight:600}
+.pjchip button:hover{border-color:var(--accent)}
+.pjchip button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.pjchip button.view{display:inline-flex;align-items:center;gap:5px}
 .plate-dots{display:inline-grid;grid-template-columns:repeat(2,3px);gap:1.5px;vertical-align:-1px}
 .plate-dots i{display:block;width:3px;height:3px;border-radius:50%;background:currentColor;opacity:.75}
 #dlgTemplates .tsec h3{background:var(--bg)}
@@ -716,6 +748,7 @@ dialog{border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
       </div>
       <button class="btn sm icon-only" id="btnPanel" title="Mostrar ou esconder o painel de contas" aria-label="Painel de contas" data-icon="panelRight"></button>
     </div>
+    <div class="pjchip" id="pjChip" hidden role="navigation" aria-label="Peças do projeto 3D"></div>
     <div class="stagebox">
       <div class="stage" id="stage"><div class="wrap"><canvas id="cv"></canvas></div></div>
       <div class="empty" id="emptyState" hidden>
@@ -880,8 +913,31 @@ dialog{border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
         </div>
         <div id="tplSections"></div>
         <p class="note" id="tplEmpty" hidden>Nenhum molde encontrado. Dica: use <b>Imagem → contas</b> para converter qualquer imagem ou padrão pronto.</p>
+        <div id="tplProjects" hidden></div>
       </div>
     </div>
+  </div>
+</div></dialog>
+
+<dialog id="dlgProject"><div class="dlg">
+  <header><h2 id="pjTitle"></h2><button class="btn sm" data-close>Fechar</button></header>
+  <div class="body pjbody">
+    <section class="pj-view">
+      <div class="pj-stage" id="pjStage" aria-label="Modelo 3D (arraste para girar)"></div>
+      <div class="pj-ctl">
+        <label>Separar as peças <input type="range" id="pjEx" min="0" max="120" value="0"></label>
+        <label><input type="checkbox" id="pjAuto" checked> Girar sozinho</label>
+        <span>Arraste para girar</span>
+      </div>
+      <p class="note" style="margin:10px 0 0">As peças estão desenhadas vistas de fora, como aparecem no objeto pronto.</p>
+    </section>
+    <section class="pj-info">
+      <p id="pjDesc" style="margin-top:0"></p>
+      <div class="pj-chips" id="pjMeta"></div>
+      <h3>Peças</h3><div id="pjPieces"></div>
+      <h3>Contas por cor</h3><div class="pj-cols" id="pjColors"></div>
+      <h3>Passo a passo</h3><ol class="pj-steps" id="pjSteps"></ol>
+    </section>
   </div>
 </div></dialog>
 
@@ -990,7 +1046,7 @@ dialog{border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
 <input type="file" id="fileImg" accept="image/*" hidden>
 <div id="toast" role="status"></div>
 
-<script>(function(){var b='20261028e',v=b;try{var s=JSON.parse(localStorage.getItem('beadstudio.tplv')||'null');if(s&&s.base===b)v=b+'-'+s.t}catch(e){}window.TPL_BASE_V=b;document.write('<script src="templates.js?v='+v+'"><\/script>')})();</script>
+<script>(function(){var b='20261028j',v=b;try{var s=JSON.parse(localStorage.getItem('beadstudio.tplv')||'null');if(s&&s.base===b)v=b+'-'+s.t}catch(e){}window.TPL_BASE_V=b;document.write('<script src="templates.js?v='+v+'"><\/script><script src="projetos3d.js?v='+b+'"><\/script>')})();</script>
 <script>
 'use strict';
 /* =====================================================================
@@ -2011,6 +2067,7 @@ function updateHoverInfo(){
    ===================================================================== */
 function setGrid(w,h,grid,name,keepStock=true){
   navBack=null;if(typeof syncBack==='function')syncBack();
+  curProj=null;if(typeof syncPj==='function')syncPj();
   const before=snap();
   S.w=w;S.h=h;S.grid=grid;S.done=new Uint8Array(w*h);if(name!=null)S.name=name;
   S.tpl=null;S.tplDirty=false;S.sel=null;
@@ -2203,18 +2260,140 @@ let tplQuery='', tplSelMode=false, tplShownIds=[], tplAutoPlate=false;
 /* abas por nº de placas: '1' | '2' | '3' | '4' | '5' (5 ou mais). Cada molde aparece SÓ na aba do seu tamanho (não existe aba "Todas": pedido do usuário).
    Um molde "tem N placas" pela grade da placa do usuário (S.plate x S.plate pinos). */
 /* abas: 's' = versões PEQUENAS (~600 contas) "Nome (pequeno)" — moldes novos numa aba nova, sem tirar nada das outras (pedido do usuário, 2026-10-28); depois 1..5 placas pelo tamanho. Cada molde só aparece em UMA aba. */
-const PLATE_KEY='beadstudio.plates', PLATE_TABS=['s','1','2','3','4','5'], SMALL_RE=/\(pequeno\b/i;
+const PLATE_KEY='beadstudio.plates', PLATE_TABS=['s','1','2','3','4','5','d'], SMALL_RE=/\(pequeno\b/i;   // 'd' = Projetos 3D (peças planas que se montam; dados em projetos3d.js)
 let tplPlates=lsGet(PLATE_KEY,'1');if(!PLATE_TABS.includes(tplPlates))tplPlates='1';
 const platesOf=t=>Math.ceil(t.w/S.plate)*Math.ceil(t.h/S.plate);
 const plateKey=t=>{if(SMALL_RE.test(t.name))return 's';const n=platesOf(t);return n>=5?'5':String(Math.max(1,n))};
 function setPlates(v){tplPlates=PLATE_TABS.includes(v)?v:'1';lsSet(PLATE_KEY,tplPlates);renderTemplates();$('#tplMain').scrollTop=0}
-const plateLabel=k=>k==='s'?'Até ~600 contas':k==='1'?'1 placa':k==='5'?'5 ou mais':k+' placas';
+const plateLabel=k=>k==='d'?'Projetos 3D':k==='s'?'Até ~600 contas':k==='1'?'1 placa':k==='5'?'5 ou mais':k+' placas';
 /* desenhinho das placas (1 quadrado; 2 lado a lado; 3 em fila; 4 em 2x2) */
-const plateIcon=k=>{if(k==='s')return '<span class="plate-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></span>';const g={1:[1,1],2:[2,1],3:[3,1],4:[2,2],5:[3,2]}[k];if(!g)return '';return `<span class="plate-grid" style="grid-template-columns:repeat(${g[0]},6px)" aria-hidden="true">${'<i></i>'.repeat(g[0]*g[1])}</span>`};
+const plateIcon=k=>{if(k==='d')return '<svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3.5 7.5v9L12 21l8.5-4.5v-9z"/><path d="m3.5 7.5 8.5 4.5 8.5-4.5M12 12v9"/></svg>';if(k==='s')return '<span class="plate-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></span>';const g={1:[1,1],2:[2,1],3:[3,1],4:[2,2],5:[3,2]}[k];if(!g)return '';return `<span class="plate-grid" style="grid-template-columns:repeat(${g[0]},6px)" aria-hidden="true">${'<i></i>'.repeat(g[0]*g[1])}</span>`};
+
+/* ---------- projetos 3D de ENCAIXE: peças planas (com dentes/fendas) montadas em 3D (aba "Projetos 3D" da galeria; dados em projetos3d.js, gerado por tools/make_3d.py) ----------
+   projeto = {id,name,desc,level,pieces:[{name,qty,rows}],parts:[{piece,face,at:[X,Y,Z]}],steps}. Cada parte é UMA peça posta no espaço, em células (Y para baixo):
+   a célula local (cx,cy) da peça, vista DE FORA da face escolhida, cai na célula do mundo: front (X+cx,Y+cy,Z) · back (X-cx,Y+cy,Z) · right (X,Y+cy,Z-cx) · left (X,Y+cy,Z+cx)
+   · top (X+cx,Y,Z+cy) · bottom (X+cx,Y,Z-cy). Peças de 1 conta de espessura: o plano passa pelo meio da célula. */
+const PROJ3D=()=>window.PROJECTS3D||[];
+const projMatch=q=>PROJ3D().filter(p=>!q||norm(p.name+' '+(p.desc||'')).includes(q));
+function projGrid(rows){const h=rows.length,w=Math.max(...rows.map(r=>r.length)),g=new Uint8Array(w*h);rows.forEach((row,y)=>{for(let x=0;x<row.length;x++){const code=TPL_LEGEND[row[x]];if(code)g[y*w+x]=CODE_IDX[code]}});return {w,h,g}}
+function projStats(p){const cnt=new Uint32Array(NCOL+1);let total=0;p.pieces.forEach(pc=>{const {g}=projGrid(pc.rows);for(const v of g)if(v){cnt[v]+=pc.qty;total+=pc.qty}});return {total,cnt}}
+const cellWorld=(f,[X,Y,Z],cx,cy)=>f==='front'?[X+cx,Y+cy,Z]:f==='back'?[X-cx,Y+cy,Z]:f==='right'?[X,Y+cy,Z-cx]:f==='left'?[X,Y+cy,Z+cx]:f==='top'?[X+cx,Y,Z+cy]:[X+cx,Y,Z-cy];
+/* extensão do objeto montado (em células) */
+function asmInfo(p){
+  if(p._info)return p._info;
+  const mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];
+  p.parts.forEach(pt=>{const {w,h,g}=projGrid(p.pieces[pt.piece].rows);for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(g[y*w+x]){const c=cellWorld(pt.face,pt.at,x,y);for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],c[k]);mx[k]=Math.max(mx[k],c[k])}}});
+  return p._info={min:mn,max:mx,size:[mx[0]-mn[0]+1,mx[1]-mn[1]+1,mx[2]-mn[2]+1]}}
+/* uma peça desenhada como contas, com fundo transparente (os recortes de encaixe aparecem vazios) */
+function pieceCanvas(pc,cell){
+  const {w,h,g}=projGrid(pc.rows),cv=document.createElement('canvas');cv.width=w*cell;cv.height=h*cell;const c=cv.getContext('2d');
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const v=g[y*w+x];if(!v)continue;const cx=x*cell+cell/2,cy=y*cell+cell/2;
+    c.fillStyle=PALETTE[v-1].hex;c.beginPath();c.arc(cx,cy,cell*.5,0,TAU);c.fill();
+    if(cell>=6){c.fillStyle='rgba(0,0,0,.28)';c.beginPath();c.arc(cx,cy,cell*.15,0,TAU);c.fill();c.fillStyle='rgba(255,255,255,.28)';c.beginPath();c.arc(cx-cell*.17,cy-cell*.17,cell*.12,0,TAU);c.fill()}}
+  return cv}
+/* canto (em px) da célula local (0,0) e giro de cada face */
+function faceCorner(f,[X,Y,Z],u){return f==='front'?{p:[X*u,Y*u,(Z+.5)*u],r:'',n:[0,0,1]}:f==='back'?{p:[(X+1)*u,Y*u,(Z+.5)*u],r:'rotateY(180deg)',n:[0,0,-1]}
+  :f==='right'?{p:[(X+.5)*u,Y*u,(Z+1)*u],r:'rotateY(90deg)',n:[1,0,0]}:f==='left'?{p:[(X+.5)*u,Y*u,Z*u],r:'rotateY(-90deg)',n:[-1,0,0]}
+  :f==='top'?{p:[X*u,(Y+.5)*u,Z*u],r:'rotateX(90deg)',n:[0,-1,0]}:{p:[X*u,(Y+.5)*u,(Z+1)*u],r:'rotateX(-90deg)',n:[0,1,0]}}
+/* o objeto montado em CSS 3D: cada peça é um canvas de contas; --ex afasta cada peça do centro (vista "separada") */
+function buildAssembly(p,u){
+  const info=asmInfo(p),ctr=[0,1,2].map(k=>(info.min[k]+info.max[k]+1)/2*u),box=document.createElement('div');box.className='box3d';
+  p.parts.forEach(pt=>{
+    const pc=p.pieces[pt.piece],cv=pieceCanvas(pc,u),fc=faceCorner(pt.face,pt.at,u),{w,h}=projGrid(pc.rows);
+    // centro da peça no espaço: média das células dos cantos
+    const a=cellWorld(pt.face,pt.at,0,0),b=cellWorld(pt.face,pt.at,w-1,h-1),mid=[0,1,2].map(k=>((a[k]+b[k])/2+.5)*u-ctr[k]);
+    let d=mid.slice(),L=Math.hypot(...d);if(L<u*.5)d=fc.n.slice();else d=d.map(v=>v/L);
+    cv.className='face';cv.style.transformOrigin='0 0';
+    cv.style.transform=`translate3d(calc(var(--ex,0px)*${d[0].toFixed(3)}),calc(var(--ex,0px)*${d[1].toFixed(3)}),calc(var(--ex,0px)*${d[2].toFixed(3)})) translate3d(${fc.p[0]-ctr[0]}px,${fc.p[1]-ctr[1]}px,${fc.p[2]-ctr[2]}px) ${fc.r}`;
+    box.appendChild(cv)});
+  return box}
+function mountBox(host,p,u,{interactive=false,rx=-24,ry=-34}={}){
+  const stage=document.createElement('div');stage.className='stage3d';const box=buildAssembly(p,u);stage.appendChild(box);host.appendChild(stage);
+  let auto=interactive,drag=null,raf=0;
+  const apply=()=>{box.style.transform=`rotateX(${rx}deg) rotateY(${ry}deg)`};apply();
+  const ctl={explode(v){box.style.setProperty('--ex',v+'px')},auto(b){auto=b},stop(){cancelAnimationFrame(raf);raf=0}};
+  if(interactive){
+    stage.style.touchAction='none';stage.style.cursor='grab';
+    stage.onpointerdown=e=>{drag={x:e.clientX,y:e.clientY};stage.setPointerCapture(e.pointerId);stage.style.cursor='grabbing'};
+    stage.onpointermove=e=>{if(!drag)return;ry+=(e.clientX-drag.x)*.6;rx=Math.max(-89,Math.min(89,rx-(e.clientY-drag.y)*.6));drag={x:e.clientX,y:e.clientY};apply()};
+    stage.onpointerup=stage.onpointercancel=()=>{drag=null;stage.style.cursor='grab'};
+    const tick=()=>{if(!stage.isConnected){return}if(auto&&!drag){ry+=.4;apply()}raf=requestAnimationFrame(tick)};tick();
+  }
+  return ctl}
+const projUnit=(p,px)=>{const s=asmInfo(p).size;return Math.max(3,Math.floor(px/Math.max(...s)))};
+function renderProjects3D(q){
+  const list=projMatch(q),box=$('#tplProjects');box.hidden=false;
+  $('#tplTotal').textContent=`${fmt(list.length)} ${list.length===1?'projeto':'projetos'} 3D`;
+  box.innerHTML=`<p class="pj-intro">Projetos em 3D de <b>encaixe</b>: várias peças planas (com dentes e fendas) que você monta, passa o ferro e encaixa. Abra um projeto para girar o objeto montado, separar as peças, ver cada uma, as contas por cor e o passo a passo.</p>`;
+  if(!list.length){box.innerHTML+=`<p class="note">Nenhum projeto 3D encontrado.</p>`;return}
+  const grid=document.createElement('div');grid.className='tgrid';box.appendChild(grid);
+  list.forEach(p=>{
+    const st=projStats(p),np=p.pieces.reduce((a,x)=>a+x.qty,0),d=document.createElement('div');d.className='tcard pj-card';
+    d.innerHTML=`<button type="button" class="tmain" title="Abrir o projeto"><div class="th"></div><div><b></b><br><small></small></div></button>`;
+    $('b',d).textContent=p.name;$('small',d).textContent=`${np} peças · ${fmt(st.total)} contas${p.level?` · ${p.level}`:''}`;
+    mountBox($('.th',d),p,projUnit(p,92),{rx:p.view?p.view[0]:-24,ry:p.view?p.view[1]:-34});
+    $('.tmain',d).onclick=()=>openProject3D(p.id);grid.appendChild(d)})
+}
+let pjCtl=null;
+function openProject3D(id){
+  const p=PROJ3D().find(x=>x.id===id);if(!p)return;
+  const dlg=$('#dlgProject');$('#pjTitle').textContent=p.name;$('#pjDesc').textContent=p.desc||'';
+  const st=projStats(p),np=p.pieces.reduce((a,x)=>a+x.qty,0),sz=asmInfo(p).size;
+  $('#pjMeta').innerHTML=`<span>${np} peças</span><span>${fmt(st.total)} contas</span><span>${sz[0]}×${sz[1]}×${sz[2]} contas (L×A×P)</span>${p.level?`<span>${esc(p.level)}</span>`:''}`;
+  const stage=$('#pjStage');stage.innerHTML='';if(pjCtl)pjCtl.stop();
+  pjCtl=mountBox(stage,p,projUnit(p,300),{interactive:true,rx:p.view?p.view[0]:-24,ry:p.view?p.view[1]:-34});
+  $('#pjEx').value=0;$('#pjAuto').checked=true;$('#pjEx').oninput=e=>pjCtl.explode(+e.target.value);$('#pjAuto').onchange=e=>pjCtl.auto(e.target.checked);
+  const pcs=$('#pjPieces');pcs.innerHTML='';
+  p.pieces.forEach((pc,i)=>{
+    const {w,h,g}=projGrid(pc.rows);let n=0;for(const v of g)if(v)n++;
+    const row=document.createElement('div');row.className='pj-piece';
+    row.innerHTML=`<div class="pth"><canvas></canvas></div><div class="pin"><b></b><small></small></div><button class="btn sm" type="button"></button>`;
+    thumb($('canvas',row),w,h,g,68);$('b',row).textContent=`${i+1}. ${pc.name}`;
+    $('small',row).textContent=`× ${pc.qty} · ${w}×${h} · ${fmt(n)} contas${pc.qty>1?` (${fmt(n*pc.qty)} no total)`:''}${pc.note?' · '+pc.note:''}`;
+    const b=$('button',row);b.innerHTML=icon('pencil',14)+' Abrir no editor';b.onclick=()=>openPiece(p,pc);pcs.appendChild(row)});
+  const cols=[];for(let i=1;i<=NCOL;i++)if(st.cnt[i])cols.push(i);cols.sort((a,b)=>st.cnt[b]-st.cnt[a]);
+  $('#pjColors').innerHTML=cols.map(i=>`<span class="pj-col"><i style="background:${PALETTE[i-1].hex}"></i>${esc(PALETTE[i-1].code)} · ${fmt(st.cnt[i])}</span>`).join('');
+  $('#pjSteps').innerHTML=(p.steps||[]).map(t=>`<li>${esc(t)}</li>`).join('');
+  if(!dlg.open)dlg.showModal();
+}
+$('#dlgProject').addEventListener('close',()=>{if(pjCtl){pjCtl.stop();pjCtl=null}});
+/* peça de projeto 3D aberta no editor: {id (do projeto), idx (da peça), w, h, g (a grade original, para saber se você mexeu)} */
+var curProj=null;
+function projEdited(){
+  if(!curProj)return false;
+  if(S.w!==curProj.w||S.h!==curProj.h||doneTotal>0)return true;
+  for(let i=0;i<S.grid.length;i++)if(S.grid[i]!==curProj.g[i])return true;
+  return false;
+}
+function syncPj(){
+  const box=$('#pjChip');if(!box)return;
+  const p=curProj&&PROJ3D().find(x=>x.id===curProj.id);
+  if(!p||view!=='edit'){if(!box.hidden){box.hidden=true;requestAnimationFrame(()=>{try{layout();requestDraw()}catch(e){}})}return}
+  const was=box.hidden;box.hidden=false;box.innerHTML='';
+  if(was)requestAnimationFrame(()=>{try{layout();requestDraw()}catch(e){}});     // a barra ocupa altura: refaz o tamanho da tela
+  const t=document.createElement('span');t.className='pj-t';t.textContent=`Projeto 3D: ${p.name}`;box.appendChild(t);
+  p.pieces.forEach((pc,i)=>{
+    const b=document.createElement('button');b.type='button';b.className=i===curProj.idx?'on':'';b.textContent=`${i+1}. ${pc.name}${pc.qty>1?` ×${pc.qty}`:''}`;
+    b.title=i===curProj.idx?'Peça que está no editor':'Abrir esta peça no editor';b.onclick=()=>{if(i!==curProj.idx)openPiece(p,pc)};box.appendChild(b)});
+  const v=document.createElement('button');v.type='button';v.className='view';v.innerHTML=icon('layout',14)+' Ver o projeto 3D';v.title='Abrir o modelo 3D com todas as peças';v.onclick=()=>openProject3D(p.id);box.appendChild(v);
+}
+function openPiece(p,pc){
+  const idx=p.pieces.indexOf(pc),inEd=!!curProj&&view==='edit';
+  if(inEd&&projEdited()){if(!confirm('Você mexeu nesta peça (ou começou a montar). Abrir outra peça vai substituí-la — dá para voltar com Desfazer (Ctrl+Z) enquanto o projeto estiver aberto. Continuar?'))return}
+  else if(!inEd&&!okToReplace())return;
+  const keep=inEd?navBack:{from:'project',id:p.id,under:$('#dlgTemplates').open?galleryUnder:view,query:tplQuery,cat:tplCat,view:tplView,plates:'d'};   // trocar de peça dentro do projeto mantém o mesmo "Voltar"
+  const {w,h,g}=projGrid(pc.rows);
+  $('#dlgProject').close();$('#dlgTemplates').close();
+  if(S.mode!=='create')setMode('create');
+  setGrid(w,h,g,`${p.name} — ${pc.name}`);
+  curProj={id:p.id,idx,w,h,g:g.slice()};navBack=keep;syncBack();syncPj();
+  refreshAll();scheduleSave();setView('edit');
+  toast(`Peça ${idx+1} de ${p.pieces.length}: “${pc.name}”${pc.qty>1?` (faça ${pc.qty} iguais)`:''}`);
+}
 function renderPlateTabs(counts){
   const box=$('#tplPlates');
-  const keys=PLATE_TABS.filter(k=>k!=='5'||counts['5']>0||tplPlates==='5');
-  box.innerHTML=keys.map(k=>{const n=counts[k]||0;const tip=k==='s'?'Versões pequenas, de cerca de 600 contas: rápidas de montar':k==='1'?`Cabem numa placa só (até ${S.plate}×${S.plate} pinos)`:`Ocupam ${k==='5'?'5 ou mais':k} placas de ${S.plate}×${S.plate} pinos`;
+  const keys=PLATE_TABS.filter(k=>k!=='5'||counts['5']>0||tplPlates==='5').filter(k=>k!=='d'||counts.d>0||tplPlates==='d');
+  box.innerHTML=keys.map(k=>{const n=counts[k]||0;const tip=k==='d'?'Projetos em 3D: várias peças planas que se montam (caixinhas, dados, cubos)':k==='s'?'Versões pequenas, de cerca de 600 contas: rápidas de montar':k==='1'?`Cabem numa placa só (até ${S.plate}×${S.plate} pinos)`:`Ocupam ${k==='5'?'5 ou mais':k} placas de ${S.plate}×${S.plate} pinos`;
     return `<button type="button" role="tab" class="ptab${k===tplPlates?' on':''}${n?'':' off'}" data-p="${k}" aria-selected="${k===tplPlates}" title="${esc(tip)}">${plateIcon(k)}<span>${plateLabel(k)}</span><small>${fmt(n)}</small></button>`}).join('')
     +`<span class="pt-note">placa de ${S.plate}×${S.plate} pinos</span>`;
   const on=box.querySelector('.ptab.on');if(on)box.scrollLeft=Math.max(0,on.offsetLeft-box.clientWidth/2+on.offsetWidth/2);   // no celular a aba escolhida fica à vista
@@ -2247,6 +2426,7 @@ function applyPlacement(ids,{name,cat}){
 /* há trabalho no editor que seria perdido ao abrir outro molde? (desenho que não é de um molde, ajustes não guardados ou progresso de montagem) */
 function okToReplace(){
   if(!total)return true;
+  if(curProj&&!projEdited())return true;          // peça de projeto 3D que você não mexeu: pode trocar sem perguntar
   if(!(S.tplDirty||doneTotal>0||!S.tpl))return true;
   return confirm('Você tem um desenho em andamento (com ajustes ou montagem que não foram guardados como molde). Abrir este molde vai substituí-lo — dá para voltar com Desfazer (Ctrl+Z) enquanto esta página ficar aberta. Substituir?');
 }
@@ -2263,8 +2443,8 @@ function captureNav(t){
 }
 function syncBack(){
   const b=$('#btnBack');b.hidden=!navBack;if(!navBack)return;
-  const txt=navBack.from==='gallery'?'Voltar aos moldes':(navBack.query&&navBack.query.trim()?'Voltar à busca':'Voltar');
-  $('.lbl',b).textContent=txt;b.title=navBack.from==='gallery'?'Voltar à galeria de moldes, no mesmo ponto onde você estava':'Voltar à tela inicial, no mesmo ponto onde você estava';b.setAttribute('aria-label',txt);
+  const pj=navBack.from==='project',txt=pj?'Voltar ao projeto':navBack.from==='gallery'?'Voltar aos moldes':(navBack.query&&navBack.query.trim()?'Voltar à busca':'Voltar');
+  $('.lbl',b).textContent=txt;b.title=pj?'Voltar ao projeto 3D, com todas as peças':navBack.from==='gallery'?'Voltar à galeria de moldes, no mesmo ponto onde você estava':'Voltar à tela inicial, no mesmo ponto onde você estava';b.setAttribute('aria-label',txt);
 }
 function flashItem(root,id){
   const el=root.querySelector(`[data-id="${CSS.escape(id)}"]`);if(!el)return;
@@ -2276,6 +2456,9 @@ function applyRestore(){
   if(nb.from==='home'){
     const put=()=>{$('#home').scrollTop=nb.home;$('#homeNewRow').scrollLeft=nb.row;flashItem($('#home'),nb.id)};
     put();requestAnimationFrame(put);
+  }else if(nb.from==='project'){                       // volta para o projeto 3D (galeria na aba "Projetos 3D" + o projeto aberto)
+    tplQuery=nb.query||'';tplCat=nb.cat||'all';if(nb.view)tplView=nb.view;tplPlates='d';
+    openTemplates();openProject3D(nb.id);
   }else{
     tplQuery=nb.query;tplCat=nb.cat;tplView=nb.view;if(nb.plates&&PLATE_TABS.includes(nb.plates))tplPlates=nb.plates;
     openTemplates();
@@ -2397,9 +2580,13 @@ function renderTemplates(){
   const byText=all.filter(t=>!q||norm(t.name+' '+nameOfCat(t.cat)).includes(q));
   // abas por nº de placas: as contagens respeitam a busca; o filtro vale para tudo (blocos, lista, barra lateral) menos "Excluídos"
   const pcount={};byText.forEach(t=>{if(!t.trashed){const k=plateKey(t);pcount[k]=(pcount[k]||0)+1}});
+  pcount.d=projMatch(q).length;
   if(tplAutoPlate){tplAutoPlate=false;if(!pcount[tplPlates]){const f=PLATE_TABS.find(k=>pcount[k]);if(f)tplPlates=f}}   // aberta por uma busca: vai para a primeira aba que tem resultado
   const byQuery=byText.filter(t=>plateKey(t)===tplPlates);                  // cada molde só aparece na aba do seu tamanho (inclui os excluídos)
   renderPlateTabs(pcount);
+  const is3d=tplPlates==='d';$('#tplDlgBody').classList.toggle('view-3d',is3d);
+  if(is3d){renderProjects3D(q);return}
+  $('#tplProjects').hidden=true;
   const catN=id=>byQuery.filter(t=>t.cat===id).length;
   const hasMine=list.some(t=>t.cat==='mine');
   const blocks=tplView==='blocks';
@@ -3210,7 +3397,7 @@ $$('[data-theme-pref]').forEach(b=>b.addEventListener('click',()=>{try{localStor
    ===================================================================== */
 let view='home',histPushed=false;
 function setView(v,push=true){
-  view=v;document.body.dataset.view=v;
+  view=v;document.body.dataset.view=v;if(v==='home')curProj=null;if(typeof syncPj==='function')syncPj();
   if(v==='edit'){
     layout();if(fitPending)fitZoom();requestDraw();
     if(push&&location.hash!=='#editar'){try{history.pushState({v:'edit'},'','#editar');histPushed=true}catch(e){}}
