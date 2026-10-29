@@ -472,7 +472,7 @@ dialog{border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
 .stage3d{perspective:800px;display:grid;place-items:center;width:100%;height:100%;user-select:none}
 .box3d{position:relative;transform-style:preserve-3d}
 .box3d{width:0;height:0}
-.box3d .face{position:absolute;left:0;top:0;display:block;backface-visibility:visible}
+.box3d .face{position:absolute;left:0;top:0;display:block;backface-visibility:visible;max-width:none;max-height:none;image-rendering:auto}
 #dlgProject{width:min(1180px,96vw);max-width:96vw;height:min(820px,94vh);height:min(820px,94dvh)}
 #dlgProject .dlg{height:100%;max-height:none}
 #dlgProject .pjbody{display:grid;grid-template-columns:minmax(300px,1fr) minmax(320px,1fr);gap:22px;align-items:start}
@@ -1046,7 +1046,7 @@ dialog{border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
 <input type="file" id="fileImg" accept="image/*" hidden>
 <div id="toast" role="status"></div>
 
-<script>(function(){var b='20261028j',v=b;try{var s=JSON.parse(localStorage.getItem('beadstudio.tplv')||'null');if(s&&s.base===b)v=b+'-'+s.t}catch(e){}window.TPL_BASE_V=b;document.write('<script src="templates.js?v='+v+'"><\/script><script src="projetos3d.js?v='+b+'"><\/script>')})();</script>
+<script>(function(){var b='20261029b',v=b;try{var s=JSON.parse(localStorage.getItem('beadstudio.tplv')||'null');if(s&&s.base===b)v=b+'-'+s.t}catch(e){}window.TPL_BASE_V=b;document.write('<script src="templates.js?v='+v+'"><\/script><script src="projetos3d.js?v='+b+'"><\/script>')})();</script>
 <script>
 'use strict';
 /* =====================================================================
@@ -2277,12 +2277,18 @@ const PROJ3D=()=>window.PROJECTS3D||[];
 const projMatch=q=>PROJ3D().filter(p=>!q||norm(p.name+' '+(p.desc||'')).includes(q));
 function projGrid(rows){const h=rows.length,w=Math.max(...rows.map(r=>r.length)),g=new Uint8Array(w*h);rows.forEach((row,y)=>{for(let x=0;x<row.length;x++){const code=TPL_LEGEND[row[x]];if(code)g[y*w+x]=CODE_IDX[code]}});return {w,h,g}}
 function projStats(p){const cnt=new Uint32Array(NCOL+1);let total=0;p.pieces.forEach(pc=>{const {g}=projGrid(pc.rows);for(const v of g)if(v){cnt[v]+=pc.qty;total+=pc.qty}});return {total,cnt}}
+/* `rot` (0-3) de uma parte gira a peça em 90° no sentido horário antes de pô-la no espaço (a célula `at` é a do canto 0,0 da peça JÁ girada) */
+function partRows(p,pt){
+  const r=(((pt.rot||0)%4)+4)%4,base=p.pieces[pt.piece].rows;if(!r)return base;if(pt._rr)return pt._rr;
+  let rows=base;
+  for(let k=0;k<r;k++){const h=rows.length,w=Math.max(...rows.map(x=>x.length)),pad=rows.map(x=>x.padEnd(w,'.')),out=[];for(let y=0;y<w;y++){let t='';for(let x=0;x<h;x++)t+=pad[h-1-x][y];out.push(t)}rows=out}
+  return pt._rr=rows}
 const cellWorld=(f,[X,Y,Z],cx,cy)=>f==='front'?[X+cx,Y+cy,Z]:f==='back'?[X-cx,Y+cy,Z]:f==='right'?[X,Y+cy,Z-cx]:f==='left'?[X,Y+cy,Z+cx]:f==='top'?[X+cx,Y,Z+cy]:[X+cx,Y,Z-cy];
 /* extensão do objeto montado (em células) */
 function asmInfo(p){
   if(p._info)return p._info;
   const mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];
-  p.parts.forEach(pt=>{const {w,h,g}=projGrid(p.pieces[pt.piece].rows);for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(g[y*w+x]){const c=cellWorld(pt.face,pt.at,x,y);for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],c[k]);mx[k]=Math.max(mx[k],c[k])}}});
+  p.parts.forEach(pt=>{const {w,h,g}=projGrid(partRows(p,pt));for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(g[y*w+x]){const c=cellWorld(pt.face,pt.at,x,y);for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],c[k]);mx[k]=Math.max(mx[k],c[k])}}});
   return p._info={min:mn,max:mx,size:[mx[0]-mn[0]+1,mx[1]-mn[1]+1,mx[2]-mn[2]+1]}}
 /* uma peça desenhada como contas, com fundo transparente (os recortes de encaixe aparecem vazios) */
 function pieceCanvas(pc,cell){
@@ -2298,14 +2304,17 @@ function faceCorner(f,[X,Y,Z],u){return f==='front'?{p:[X*u,Y*u,(Z+.5)*u],r:'',n
 /* o objeto montado em CSS 3D: cada peça é um canvas de contas; --ex afasta cada peça do centro (vista "separada") */
 function buildAssembly(p,u){
   const info=asmInfo(p),ctr=[0,1,2].map(k=>(info.min[k]+info.max[k]+1)/2*u),box=document.createElement('div');box.className='box3d';
+  const nth=Math.max(1,p.thick|0||1);                   // `thick` (camadas empilhadas): várias cópias do plano, lado a lado, para a pilha parecer maciça vista de lado
   p.parts.forEach(pt=>{
-    const pc=p.pieces[pt.piece],cv=pieceCanvas(pc,u),fc=faceCorner(pt.face,pt.at,u),{w,h}=projGrid(pc.rows);
+    const rows=partRows(p,pt),pc={rows},fc=faceCorner(pt.face,pt.at,u),{w,h}=projGrid(rows);
     // centro da peça no espaço: média das células dos cantos
     const a=cellWorld(pt.face,pt.at,0,0),b=cellWorld(pt.face,pt.at,w-1,h-1),mid=[0,1,2].map(k=>((a[k]+b[k])/2+.5)*u-ctr[k]);
     let d=mid.slice(),L=Math.hypot(...d);if(L<u*.5)d=fc.n.slice();else d=d.map(v=>v/L);
-    cv.className='face';cv.style.transformOrigin='0 0';
-    cv.style.transform=`translate3d(calc(var(--ex,0px)*${d[0].toFixed(3)}),calc(var(--ex,0px)*${d[1].toFixed(3)}),calc(var(--ex,0px)*${d[2].toFixed(3)})) translate3d(${fc.p[0]-ctr[0]}px,${fc.p[1]-ctr[1]}px,${fc.p[2]-ctr[2]}px) ${fc.r}`;
-    box.appendChild(cv)});
+    for(let k=0;k<nth;k++){
+      const cv=pieceCanvas(pc,u),off=nth>1?(k/(nth-1)-.5)*.8*u:0;
+      cv.className='face';cv.style.transformOrigin='0 0';
+      cv.style.transform=`translate3d(calc(var(--ex,0px)*${d[0].toFixed(3)}),calc(var(--ex,0px)*${d[1].toFixed(3)}),calc(var(--ex,0px)*${d[2].toFixed(3)})) translate3d(${(fc.p[0]+fc.n[0]*off-ctr[0]).toFixed(2)}px,${(fc.p[1]+fc.n[1]*off-ctr[1]).toFixed(2)}px,${(fc.p[2]+fc.n[2]*off-ctr[2]).toFixed(2)}px) ${fc.r}`;
+      box.appendChild(cv)}});
   return box}
 function mountBox(host,p,u,{interactive=false,rx=-24,ry=-34}={}){
   const stage=document.createElement('div');stage.className='stage3d';const box=buildAssembly(p,u);stage.appendChild(box);host.appendChild(stage);
