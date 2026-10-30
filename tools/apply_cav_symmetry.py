@@ -10,15 +10,19 @@ HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 import tplfile, loose, mirror
 
+# ATENÇÃO (2026-10-30): estes 3 foram espelhados por inteiro numa 1ª rodada e o usuário reclamou (Shiryu: olhos estranhos; Shun chibi: "cara de espelhado"; Shun corpo inteiro: era melhor o original).
+# Hoje são tratados por tools/cav_chibis_fix.py (simetria SÓ do capacete/olhos, olhos desenhados, cabelo natural). Ficam aqui só para o histórico e para o `--apply` reconhecer o estado antigo.
+OLD_PICK = {
+    'shun-de-andromeda-chibi-corpo-inteiro': (24, 'R'),
+    'shun-de-andromeda-chibi': (37, 'L'),
+    'shiryu-de-dragao-chibi': (39, 'L'),
+}
 PICK = {
     'seiya-de-pegaso-chibi-capacete': (40, 'R'),
     'seiya-de-pegaso-chibi-armadura-de-prata': (40, 'L'),
     'seiya-de-sagitario-chibi': (40, 'L'),
-    'shun-de-andromeda-chibi-corpo-inteiro': (24, 'R'),
-    'shun-de-andromeda-chibi': (37, 'L'),
     'hyoga-de-cisne-chibi': (41, 'R'),
     'ikki-de-fenix-chibi': (38, 'L'),
-    'shiryu-de-dragao-chibi': (39, 'L'),
     'shiryu-de-dragao-chibi-capacete': (36, 'L'),
     'shaka-de-virgem-chibi': (40, 'R'),
     'seiya-de-sagitario-chibi-asas': (92, 'L'),
@@ -34,6 +38,8 @@ def symmetry(rows):
 
 if __name__ == '__main__':
     dry = '--dry' in sys.argv
+    if not dry and '--force' not in sys.argv:
+        sys.exit('já aplicado em 2026-10-30 (e o catálogo é definitivo); rodar de novo SOBRESCREVE tools/backups/pre-cav-simetria.js. Use --dry para só olhar ou --force se for de propósito.')
     TPL = os.path.join(ROOT, 'templates.js'); d = tplfile.parse(TPL)
     by = {it['id']: it for it in d['items']}
     for i, (a2, side) in PICK.items():

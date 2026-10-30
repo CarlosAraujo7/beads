@@ -1,5 +1,6 @@
 """Cubos 3D DE ENCAIXE gerados por tools/cube3d.py (a junta é a de dentes alternados dos cubos lidos das fotos: Abelha, Presente).
-Hoje só o DADO (cubo de 6 lados, 9×9×9). Os 12 cubos de personagens feitos em 2026-10-29 (Pikachu, Kirby, Creeper, Minion, Batman, Homem de Ferro, Darth Vader, Toad,
+Hoje só o DADO (cubo de 6 lados, 5×5×5, o menor possível: a borda de cada face é dividida com as vizinhas, então as pintas só cabem no miolo, e 5 é o primeiro tamanho com miolo 3×3, a grade de pintas de um dado;
+com 4 o miolo é 2×2 e não cabem 5 nem 6 pintas; 7 é o menor com todas as pintas separadas). Os 12 cubos de personagens feitos em 2026-10-29 (Pikachu, Kirby, Creeper, Minion, Batman, Homem de Ferro, Darth Vader, Toad,
 Groot, Hello Kitty, Naruto e o Dado 13×13×13) foram APAGADOS a pedido do usuário; o que se aprendeu com eles está em CLAUDE.md (§3, "Cubos GERADOS").
 make_3d.py usa cubes() daqui. Para um cubo novo: monte um `spec` (veja cube3d.cube_project) com a textura de cada face.
 """
@@ -14,10 +15,11 @@ def steps():
             'Feche com a tampa de cima. Se ficar frouxo, uma gota de cola nos cantos. Projeto desenhado (não é de uma foto): teste o encaixe antes de fazer em várias cores.']
 
 
-def die_face(n, N=9):
+def die_face(n, N=5):
     """face de dado N×N com `n` pintas de 1 conta (só no miolo: a borda é das outras faces)"""
     g = [['w'] * N for _ in range(N)]
-    a, b, c = 2, N // 2, N - 3                       # posições das pintas (N=9: 2, 4, 6)
+    a = 1 if N <= 7 else 2
+    b, c = N // 2, N - 1 - a                         # posições das pintas (N=5: 1, 2, 3; N=7: 1, 3, 5; N=9: 2, 4, 6)
     pos = {'tl': (a, a), 'tr': (c, a), 'ml': (a, b), 'mr': (c, b), 'bl': (a, c), 'br': (c, c), 'c': (b, b)}
     lay = {1: ['c'], 2: ['tl', 'br'], 3: ['tl', 'c', 'br'], 4: ['tl', 'tr', 'bl', 'br'], 5: ['tl', 'tr', 'c', 'bl', 'br'], 6: ['tl', 'tr', 'ml', 'mr', 'bl', 'br']}
     for p in lay[n]:
@@ -26,12 +28,13 @@ def die_face(n, N=9):
 
 
 def build():
-    N = 9
-    return [{'id': 'cubo-dado', 'name': 'Cubo Dado (9×9×9)', 'size': (N, N, N), 'level': 'Fácil',
-             'tex': {'front': die_face(1), 'back': die_face(6), 'right': die_face(2), 'left': die_face(5), 'top': die_face(3), 'bottom': die_face(4)},
+    N = 5
+    return [{'id': 'cubo-dado', 'name': f'Cubo Dado ({N}×{N}×{N})', 'size': (N, N, N), 'level': 'Fácil', 'solid': True,
+             'tex': {'front': die_face(1, N), 'back': die_face(6, N), 'right': die_face(2, N), 'left': die_face(5, N), 'top': die_face(3, N), 'bottom': die_face(4, N)},
              'fill': {'*': 'w'}, 'ears': None, 'steps': steps(),
-             'desc': f'Dado de 6 lados de {N}×{N}×{N} contas (cerca de {N * 0.26:.1f} cm), branco com pintas pretas, em 6 peças planas com dentes alternados que se encaixam sem sobrar nem faltar conta. '
-                     'As 6 faces têm de 1 a 6 pintas e as opostas somam 7 (1×6, 2×5, 3×4). É um projeto desenhado (não é de uma foto de peça pronta): teste o encaixe antes.'}]
+             'desc': f'O menor dado de 6 lados possível nesta montagem: {N}×{N}×{N} contas (cerca de {N * 0.26:.1f} cm), branco com pintas pretas, em 6 peças planas com dentes alternados que se encaixam sem sobrar nem faltar conta. '
+                     'As 6 faces têm de 1 a 6 pintas e as opostas somam 7 (1×6, 2×5, 3×4). Neste tamanho as pintas do 6 se encostam e formam duas barras de 3. As peças são pequenas: passe pouco o ferro, para os dentes não encolherem. '
+                     'É um projeto desenhado (não é de uma foto de peça pronta): teste o encaixe antes.'}]
 
 
 def cubes():

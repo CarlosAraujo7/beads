@@ -497,8 +497,6 @@ dialog{border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
 .pjchip button:hover{border-color:var(--accent)}
 .pjchip button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 .pjchip button.view{display:inline-flex;align-items:center;gap:5px}
-.plate-dots{display:inline-grid;grid-template-columns:repeat(2,3px);gap:1.5px;vertical-align:-1px}
-.plate-dots i{display:block;width:3px;height:3px;border-radius:50%;background:currentColor;opacity:.75}
 #dlgTemplates .tsec h3{background:var(--bg)}
 #dlgTemplates .cblock,#dlgTemplates .tcard{background:var(--panel);border-radius:16px}
 #dlgTemplates .cblock>header{flex-wrap:nowrap;gap:8px}
@@ -1046,7 +1044,7 @@ dialog{border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
 <input type="file" id="fileImg" accept="image/*" hidden>
 <div id="toast" role="status"></div>
 
-<script>(function(){var b='20261030c',v=b;try{var s=JSON.parse(localStorage.getItem('beadstudio.tplv')||'null');if(s&&s.base===b)v=b+'-'+s.t}catch(e){}window.TPL_BASE_V=b;document.write('<script src="templates.js?v='+v+'"><\/script><script src="projetos3d.js?v='+b+'"><\/script>')})();</script>
+<script>(function(){var b='20261030j',v=b;try{var s=JSON.parse(localStorage.getItem('beadstudio.tplv')||'null');if(s&&s.base===b)v=b+'-'+s.t}catch(e){}window.TPL_BASE_V=b;document.write('<script src="templates.js?v='+v+'"><\/script><script src="projetos3d.js?v='+b+'"><\/script>')})();</script>
 <script>
 'use strict';
 /* =====================================================================
@@ -2259,18 +2257,15 @@ function thumb(canvas,w,h,grid,max){
 let tplQuery='', tplSelMode=false, tplShownIds=[], tplAutoPlate=false;
 /* abas por nº de placas: '1' | '2' | '3' | '4' | '5' (5 ou mais). Cada molde aparece SÓ na aba do seu tamanho (não existe aba "Todas": pedido do usuário).
    Um molde "tem N placas" pela grade da placa do usuário (S.plate x S.plate pinos). */
-/* abas: 's' = moldes NATURALMENTE pequenos, com menos de 600 contas (pedido do usuário, 2026-10-29; as reduções "(pequeno)" foram apagadas). É uma aba por CONTAGEM de contas (`isSmall`) que se soma
-   às outras: o molde continua também na aba do seu tamanho em placas (nada sai da aba "1 placa"); depois 1..5 placas pelo tamanho. */
-const PLATE_KEY='beadstudio.plates', PLATE_TABS=['s','1','2','3','4','5','d'], SMALL_MAX=600;   // 'd' = Projetos 3D (peças planas que se montam; dados em projetos3d.js)
+const PLATE_KEY='beadstudio.plates', PLATE_TABS=['1','2','3','4','5','d'];   // 'd' = Projetos 3D (peças planas que se montam; dados em projetos3d.js)
 let tplPlates=lsGet(PLATE_KEY,'1');if(!PLATE_TABS.includes(tplPlates))tplPlates='1';
 const platesOf=t=>Math.ceil(t.w/S.plate)*Math.ceil(t.h/S.plate);
 const plateKey=t=>{const n=platesOf(t);return n>=5?'5':String(Math.max(1,n))};
-const isSmall=t=>t.beads<SMALL_MAX;
-const inPlateTab=(t,k)=>k==='s'?isSmall(t):plateKey(t)===k;
+const inPlateTab=(t,k)=>plateKey(t)===k;
 function setPlates(v){tplPlates=PLATE_TABS.includes(v)?v:'1';lsSet(PLATE_KEY,tplPlates);renderTemplates();$('#tplMain').scrollTop=0}
-const plateLabel=k=>k==='d'?'Projetos 3D':k==='s'?'Até ~600 contas':k==='1'?'1 placa':k==='5'?'5 ou mais':k+' placas';
+const plateLabel=k=>k==='d'?'Projetos 3D':k==='1'?'1 placa':k==='5'?'5 ou mais':k+' placas';
 /* desenhinho das placas (1 quadrado; 2 lado a lado; 3 em fila; 4 em 2x2) */
-const plateIcon=k=>{if(k==='d')return '<svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3.5 7.5v9L12 21l8.5-4.5v-9z"/><path d="m3.5 7.5 8.5 4.5 8.5-4.5M12 12v9"/></svg>';if(k==='s')return '<span class="plate-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></span>';const g={1:[1,1],2:[2,1],3:[3,1],4:[2,2],5:[3,2]}[k];if(!g)return '';return `<span class="plate-grid" style="grid-template-columns:repeat(${g[0]},6px)" aria-hidden="true">${'<i></i>'.repeat(g[0]*g[1])}</span>`};
+const plateIcon=k=>{if(k==='d')return '<svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3.5 7.5v9L12 21l8.5-4.5v-9z"/><path d="m3.5 7.5 8.5 4.5 8.5-4.5M12 12v9"/></svg>';const g={1:[1,1],2:[2,1],3:[3,1],4:[2,2],5:[3,2]}[k];if(!g)return '';return `<span class="plate-grid" style="grid-template-columns:repeat(${g[0]},6px)" aria-hidden="true">${'<i></i>'.repeat(g[0]*g[1])}</span>`};
 
 /* ---------- projetos 3D de ENCAIXE: peças planas (com dentes/fendas) montadas em 3D (aba "Projetos 3D" da galeria; dados em projetos3d.js, gerado por tools/make_3d.py) ----------
    projeto = {id,name,desc,level,pieces:[{name,qty,rows}],parts:[{piece,face,at:[X,Y,Z]}],steps}. Cada parte é UMA peça posta no espaço, em células (Y para baixo):
@@ -2294,9 +2289,10 @@ function asmInfo(p){
   p.parts.forEach(pt=>{const {w,h,g}=projGrid(partRows(p,pt));for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(g[y*w+x]){const c=cellWorld(pt.face,pt.at,x,y);for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],c[k]);mx[k]=Math.max(mx[k],c[k])}}});
   return p._info={min:mn,max:mx,size:[mx[0]-mn[0]+1,mx[1]-mn[1]+1,mx[2]-mn[2]+1]}}
 /* uma peça desenhada como contas, com fundo transparente (os recortes de encaixe aparecem vazios) */
-function pieceCanvas(pc,cell){
+function pieceCanvas(pc,cell,solid){      // solid (projeto com `solid: true`): fundo quadrado em cada conta, como a peça fundida; em cubos pequenos, os vãos entre as contas redondas mostravam as faces de trás
   const {w,h,g}=projGrid(pc.rows),cv=document.createElement('canvas');cv.width=w*cell;cv.height=h*cell;const c=cv.getContext('2d');
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){const v=g[y*w+x];if(!v)continue;const cx=x*cell+cell/2,cy=y*cell+cell/2;
+    if(solid){c.fillStyle=PALETTE[v-1].hex;c.fillRect(x*cell,y*cell,cell,cell);c.fillStyle='rgba(0,0,0,.2)';c.fillRect(x*cell,y*cell,cell,cell)}
     c.fillStyle=PALETTE[v-1].hex;c.beginPath();c.arc(cx,cy,cell*.5,0,TAU);c.fill();
     if(cell>=6){c.fillStyle='rgba(0,0,0,.28)';c.beginPath();c.arc(cx,cy,cell*.15,0,TAU);c.fill();c.fillStyle='rgba(255,255,255,.28)';c.beginPath();c.arc(cx-cell*.17,cy-cell*.17,cell*.12,0,TAU);c.fill()}}
   return cv}
@@ -2314,7 +2310,7 @@ function buildAssembly(p,u){
     const a=cellWorld(pt.face,pt.at,0,0),b=cellWorld(pt.face,pt.at,w-1,h-1),mid=[0,1,2].map(k=>((a[k]+b[k])/2+.5)*u-ctr[k]);
     let d=mid.slice(),L=Math.hypot(...d);if(L<u*.5)d=fc.n.slice();else d=d.map(v=>v/L);
     for(let k=0;k<nth;k++){
-      const cv=pieceCanvas(pc,u),off=nth>1?(k/(nth-1)-.5)*.8*u:0;
+      const cv=pieceCanvas(pc,u,p.solid),off=nth>1?(k/(nth-1)-.5)*.8*u:0;
       cv.className='face';cv.style.transformOrigin='0 0';
       cv.style.transform=`translate3d(calc(var(--ex,0px)*${d[0].toFixed(3)}),calc(var(--ex,0px)*${d[1].toFixed(3)}),calc(var(--ex,0px)*${d[2].toFixed(3)})) translate3d(${(fc.p[0]+fc.n[0]*off-ctr[0]).toFixed(2)}px,${(fc.p[1]+fc.n[1]*off-ctr[1]).toFixed(2)}px,${(fc.p[2]+fc.n[2]*off-ctr[2]).toFixed(2)}px) ${fc.r}`;
       box.appendChild(cv)}});
@@ -2332,7 +2328,7 @@ function mountBox(host,p,u,{interactive=false,rx=-24,ry=-34}={}){
     const tick=()=>{if(!stage.isConnected){return}if(auto&&!drag){ry+=.4;apply()}raf=requestAnimationFrame(tick)};tick();
   }
   return ctl}
-const projUnit=(p,px)=>{const s=asmInfo(p).size;return Math.max(3,Math.floor(px/Math.max(...s)))};
+const projUnit=(p,px)=>{const s=asmInfo(p).size;return Math.max(3,Math.min(36,Math.floor(px/Math.max(...s))))};      // teto de 36 px por conta: sem ele, um cubo pequeno (5×5×5) girado saía da tela
 function renderProjects3D(q){
   const list=projMatch(q),box=$('#tplProjects');box.hidden=false;
   $('#tplTotal').textContent=`${fmt(list.length)} ${list.length===1?'projeto':'projetos'} 3D`;
@@ -2404,8 +2400,8 @@ function openPiece(p,pc){
 }
 function renderPlateTabs(counts){
   const box=$('#tplPlates');
-  const keys=PLATE_TABS.filter(k=>k!=='5'||counts['5']>0||tplPlates==='5').filter(k=>k!=='d'||counts.d>0||tplPlates==='d');
-  box.innerHTML=keys.map(k=>{const n=counts[k]||0;const tip=k==='d'?'Projetos em 3D: várias peças planas que se montam (caixinhas, dados, cubos)':k==='s'?'Versões pequenas, de cerca de 600 contas: rápidas de montar':k==='1'?`Cabem numa placa só (até ${S.plate}×${S.plate} pinos)`:`Ocupam ${k==='5'?'5 ou mais':k} placas de ${S.plate}×${S.plate} pinos`;
+  const keys=PLATE_TABS.filter(k=>(k!=='3'&&k!=='5')||counts[k]>0||tplPlates===k).filter(k=>k!=='d'||counts.d>0||tplPlates==='d');   // as abas de 3 e de 5+ placas só aparecem se houver moldes nelas (pedido do usuário: tirar a de 3, que estava vazia)
+  box.innerHTML=keys.map(k=>{const n=counts[k]||0;const tip=k==='d'?'Projetos em 3D: várias peças planas que se montam (caixinhas, dados, cubos)':k==='1'?`Cabem numa placa só (até ${S.plate}×${S.plate} pinos)`:`Ocupam ${k==='5'?'5 ou mais':k} placas de ${S.plate}×${S.plate} pinos`;
     return `<button type="button" role="tab" class="ptab${k===tplPlates?' on':''}${n?'':' off'}" data-p="${k}" aria-selected="${k===tplPlates}" title="${esc(tip)}">${plateIcon(k)}<span>${plateLabel(k)}</span><small>${fmt(n)}</small></button>`}).join('')
     +`<span class="pt-note">placa de ${S.plate}×${S.plate} pinos</span>`;
   const on=box.querySelector('.ptab.on');if(on)box.scrollLeft=Math.max(0,on.offsetLeft-box.clientWidth/2+on.offsetWidth/2);   // no celular a aba escolhida fica à vista
@@ -2591,10 +2587,10 @@ function renderTemplates(){
   const nameOfCat=id=>(catInfo(id,cfg)||{name:''}).name;
   const byText=all.filter(t=>!q||norm(t.name+' '+nameOfCat(t.cat)).includes(q));
   // abas por nº de placas: as contagens respeitam a busca; o filtro vale para tudo (blocos, lista, barra lateral) menos "Excluídos"
-  const pcount={};byText.forEach(t=>{if(!t.trashed){const k=plateKey(t);pcount[k]=(pcount[k]||0)+1;if(isSmall(t))pcount.s=(pcount.s||0)+1}});
+  const pcount={};byText.forEach(t=>{if(!t.trashed){const k=plateKey(t);pcount[k]=(pcount[k]||0)+1}});
   pcount.d=projMatch(q).length;
-  if(tplAutoPlate){tplAutoPlate=false;if(!pcount[tplPlates]){const f=['1','2','3','4','5','s','d'].find(k=>pcount[k]);if(f)tplPlates=f}}   // aberta por uma busca: vai para a primeira aba que tem resultado
-  const byQuery=byText.filter(t=>inPlateTab(t,tplPlates));                  // aba de placas (cada molde em UMA delas) ou "Até ~600 contas" (por contagem; soma-se às outras); inclui os excluídos
+  if(tplAutoPlate){tplAutoPlate=false;if(!pcount[tplPlates]){const f=['1','2','3','4','5','d'].find(k=>pcount[k]);if(f)tplPlates=f}}   // aberta por uma busca: vai para a primeira aba que tem resultado
+  const byQuery=byText.filter(t=>inPlateTab(t,tplPlates));                  // aba de placas (cada molde em UMA delas); inclui os excluídos
   renderPlateTabs(pcount);
   const is3d=tplPlates==='d';$('#tplDlgBody').classList.toggle('view-3d',is3d);
   if(is3d){renderProjects3D(q);return}

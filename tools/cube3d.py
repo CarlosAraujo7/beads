@@ -129,9 +129,11 @@ def cube_project(spec):
             p['name'] = {'left': 'Lateral', 'top': 'Tampa', 'back': 'Traseira'}.get(fs[0], p['name']) + (' (cima e baixo)' if fs == ['top', 'bottom'] else ' (esquerda e direita)' if fs == ['left', 'right'] else '')
             p['note'] = f"{p['qty']} iguais"
     shell = W * H * D - (W - 2) * (H - 2) * (D - 2)
-    return {'id': spec['id'], 'name': spec['name'], 'level': spec.get('level', 'Médio'), 'view': spec.get('view', [-28, -32]),
-            'box': {'dims': [W, H, D], 'skip': []}, 'desc': spec['desc'], 'pieces': pieces, 'parts': parts, 'steps': spec['steps'],
-            '_shell': shell}
+    out = {'id': spec['id'], 'name': spec['name'], 'level': spec.get('level', 'Médio'), 'view': spec.get('view', [-28, -32]),
+           'box': {'dims': [W, H, D], 'skip': []}, 'desc': spec['desc'], 'pieces': pieces, 'parts': parts, 'steps': spec['steps'],
+           '_shell': shell}
+    if spec.get('solid'): out['solid'] = True          # o visualizador desenha as peças fechadas, sem vãos entre as contas (cubos pequenos)
+    return out
 
 
 def resample(rows, crop, nw, nh, bg='.', empty_at=0.55):
