@@ -24,6 +24,21 @@ def _cell_world(f, at, cx, cy):   # o mesmo mapeamento do app (cellWorld em inde
             'top': (X + cx, Y, Z + cy), 'bottom': (X + cx, Y, Z - cy)}[f]
 
 
+def check_disjoint(p):
+    """projetos de painéis que se cruzam (árvore de Natal): nenhuma conta do espaço pode ser de duas peças"""
+    from boxsolve import rotate
+    seen = {}
+    for pt in p['parts']:
+        rows = rotate(p['pieces'][pt['piece']]['rows'], pt.get('rot', 0))
+        for cy, r in enumerate(rows):
+            for cx, ch in enumerate(r):
+                if ch == '.': continue
+                c = _cell_world(pt['face'], pt['at'], cx, cy)
+                assert c not in seen, (p['id'], 'conta em dobro', c, p['pieces'][pt['piece']]['name'], 'e', seen[c])
+                seen[c] = p['pieces'][pt['piece']]['name']
+    print(f"  painéis sem sobreposição: {len(seen)} contas no espaço")
+
+
 def check_box(p):
     """projeto-caixa ('box': {'dims': [W,H,D], 'skip': [peças fora da caixa, ex.: asas]}): as partes têm que cobrir a casca W×H×D EXATAMENTE uma vez"""
     from boxsolve import rotate, shell
@@ -50,6 +65,7 @@ def pieces_ok(p):
         assert len({len(r) for r in pc['rows']}) == 1, (p['id'], pc['name'], 'linhas desiguais')
         for ch in ''.join(pc['rows']): assert ch == '.' or ch in HEX_BY_LETTER, (p['id'], ch)
     if p.get('box'): check_box(p)
+    if p.get('disjoint'): check_disjoint(p)
     cnt = {}
     for pt in p['parts']: cnt[pt['piece']] = cnt.get(pt['piece'], 0) + 1
     for i, pc in enumerate(p['pieces']): assert cnt.get(i, 0) == pc['qty'], (p['id'], pc['name'], 'qty', pc['qty'], 'partes', cnt.get(i, 0))
@@ -229,6 +245,15 @@ presente = {
 
 
 PROJECTS = [maca, camarao, abelha, stitch, presente]
+
+# projetos da remessa 3D 2 (gráficos limpos): bloco de grama e abelha do Minecraft, árvore de Natal de encaixe
+from r3d2_projects import R3D2
+PROJECTS += R3D2
+
+# cubos GERADOS a partir de moldes do catálogo (tools/cube3d.py + tools/make_cubes.py): mesma junta de dentes alternados dos cubos lidos das fotos
+from make_cubes import cubes
+for _c in cubes():
+    _c.pop('_shell', None); PROJECTS.append(_c)
 
 
 if __name__ == '__main__':

@@ -1046,7 +1046,7 @@ dialog{border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
 <input type="file" id="fileImg" accept="image/*" hidden>
 <div id="toast" role="status"></div>
 
-<script>(function(){var b='20261029b',v=b;try{var s=JSON.parse(localStorage.getItem('beadstudio.tplv')||'null');if(s&&s.base===b)v=b+'-'+s.t}catch(e){}window.TPL_BASE_V=b;document.write('<script src="templates.js?v='+v+'"><\/script><script src="projetos3d.js?v='+b+'"><\/script>')})();</script>
+<script>(function(){var b='20261030a',v=b;try{var s=JSON.parse(localStorage.getItem('beadstudio.tplv')||'null');if(s&&s.base===b)v=b+'-'+s.t}catch(e){}window.TPL_BASE_V=b;document.write('<script src="templates.js?v='+v+'"><\/script><script src="projetos3d.js?v='+b+'"><\/script>')})();</script>
 <script>
 'use strict';
 /* =====================================================================
@@ -2259,11 +2259,14 @@ function thumb(canvas,w,h,grid,max){
 let tplQuery='', tplSelMode=false, tplShownIds=[], tplAutoPlate=false;
 /* abas por nº de placas: '1' | '2' | '3' | '4' | '5' (5 ou mais). Cada molde aparece SÓ na aba do seu tamanho (não existe aba "Todas": pedido do usuário).
    Um molde "tem N placas" pela grade da placa do usuário (S.plate x S.plate pinos). */
-/* abas: 's' = versões PEQUENAS (~600 contas) "Nome (pequeno)" — moldes novos numa aba nova, sem tirar nada das outras (pedido do usuário, 2026-10-28); depois 1..5 placas pelo tamanho. Cada molde só aparece em UMA aba. */
-const PLATE_KEY='beadstudio.plates', PLATE_TABS=['s','1','2','3','4','5','d'], SMALL_RE=/\(pequeno\b/i;   // 'd' = Projetos 3D (peças planas que se montam; dados em projetos3d.js)
+/* abas: 's' = moldes NATURALMENTE pequenos, com menos de 600 contas (pedido do usuário, 2026-10-29; as reduções "(pequeno)" foram apagadas). É uma aba por CONTAGEM de contas (`isSmall`) que se soma
+   às outras: o molde continua também na aba do seu tamanho em placas (nada sai da aba "1 placa"); depois 1..5 placas pelo tamanho. */
+const PLATE_KEY='beadstudio.plates', PLATE_TABS=['s','1','2','3','4','5','d'], SMALL_MAX=600;   // 'd' = Projetos 3D (peças planas que se montam; dados em projetos3d.js)
 let tplPlates=lsGet(PLATE_KEY,'1');if(!PLATE_TABS.includes(tplPlates))tplPlates='1';
 const platesOf=t=>Math.ceil(t.w/S.plate)*Math.ceil(t.h/S.plate);
-const plateKey=t=>{if(SMALL_RE.test(t.name))return 's';const n=platesOf(t);return n>=5?'5':String(Math.max(1,n))};
+const plateKey=t=>{const n=platesOf(t);return n>=5?'5':String(Math.max(1,n))};
+const isSmall=t=>t.beads<SMALL_MAX;
+const inPlateTab=(t,k)=>k==='s'?isSmall(t):plateKey(t)===k;
 function setPlates(v){tplPlates=PLATE_TABS.includes(v)?v:'1';lsSet(PLATE_KEY,tplPlates);renderTemplates();$('#tplMain').scrollTop=0}
 const plateLabel=k=>k==='d'?'Projetos 3D':k==='s'?'Até ~600 contas':k==='1'?'1 placa':k==='5'?'5 ou mais':k+' placas';
 /* desenhinho das placas (1 quadrado; 2 lado a lado; 3 em fila; 4 em 2x2) */
@@ -2588,10 +2591,10 @@ function renderTemplates(){
   const nameOfCat=id=>(catInfo(id,cfg)||{name:''}).name;
   const byText=all.filter(t=>!q||norm(t.name+' '+nameOfCat(t.cat)).includes(q));
   // abas por nº de placas: as contagens respeitam a busca; o filtro vale para tudo (blocos, lista, barra lateral) menos "Excluídos"
-  const pcount={};byText.forEach(t=>{if(!t.trashed){const k=plateKey(t);pcount[k]=(pcount[k]||0)+1}});
+  const pcount={};byText.forEach(t=>{if(!t.trashed){const k=plateKey(t);pcount[k]=(pcount[k]||0)+1;if(isSmall(t))pcount.s=(pcount.s||0)+1}});
   pcount.d=projMatch(q).length;
-  if(tplAutoPlate){tplAutoPlate=false;if(!pcount[tplPlates]){const f=PLATE_TABS.find(k=>pcount[k]);if(f)tplPlates=f}}   // aberta por uma busca: vai para a primeira aba que tem resultado
-  const byQuery=byText.filter(t=>plateKey(t)===tplPlates);                  // cada molde só aparece na aba do seu tamanho (inclui os excluídos)
+  if(tplAutoPlate){tplAutoPlate=false;if(!pcount[tplPlates]){const f=['1','2','3','4','5','s','d'].find(k=>pcount[k]);if(f)tplPlates=f}}   // aberta por uma busca: vai para a primeira aba que tem resultado
+  const byQuery=byText.filter(t=>inPlateTab(t,tplPlates));                  // aba de placas (cada molde em UMA delas) ou "Até ~600 contas" (por contagem; soma-se às outras); inclui os excluídos
   renderPlateTabs(pcount);
   const is3d=tplPlates==='d';$('#tplDlgBody').classList.toggle('view-3d',is3d);
   if(is3d){renderProjects3D(q);return}

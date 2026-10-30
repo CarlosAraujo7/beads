@@ -87,3 +87,28 @@ def overlay(img, lat, box, rows, path, c0=0, r0=0, sc=3, letters=True):
                 cv2.putText(v, ch if ord(ch) < 128 else '#', (int(cx - 6), int(cy + 5)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1)
     Image.fromarray(v).save(path)
     return path
+
+
+def fit_fast(img, box, pitch=(16.5, 18.0), step=0.1, mask_fn=None, ostep=1.0):
+    """igual a fit(), mas vetorizado com numpy (centenas de vezes mais rápido): procura passo e fase que mais alinham o FURO escuro de cada conta com o centro da célula."""
+    x0, y0, x1, y1 = box
+    g = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY).astype(float)
+    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV).astype(float)
+    m = ((hsv[..., 1] > 90) | (g > 190)) if mask_fn is None else mask_fn(img)
+    H, W = g.shape
+    ang = np.linspace(0, 2 * np.pi, 8, endpoint=False)
+    best = None
+    for p in np.arange(pitch[0], pitch[1] + 1e-6, step):
+        for oy in np.arange(0, p, ostep):
+            ys = np.arange(y0 + ((oy - y0) % p), y1, p)
+            for ox in np.arange(0, p, ostep):
+                xs = np.arange(x0 + ((ox - x0) % p), x1, p)
+                X, Y = np.meshgrid(xs, ys)
+                rx = np.clip((X[..., None] + p * 0.34 * np.cos(ang)).round().astype(int), 0, W - 1)
+                ry = np.clip((Y[..., None] + p * 0.34 * np.sin(ang)).round().astype(int), 0, H - 1)
+                ok = m[ry, rx].mean(axis=-1) >= 0.75
+                if ok.sum() < 4: continue
+                cen = g[np.clip(Y.astype(int), 0, H - 1), np.clip(X.astype(int), 0, W - 1)]
+                sc = ((g[ry, rx].mean(axis=-1) - cen) * ok).sum()
+                if best is None or sc > best[0]: best = (sc, ox % p, oy % p, p)
+    return best[1], best[2], best[3], best[3]
