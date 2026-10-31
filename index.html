@@ -281,6 +281,8 @@ body[data-view="edit"] .home{display:none!important}
 .pbar i{display:block;height:100%;background:linear-gradient(90deg,var(--ok),color-mix(in srgb,var(--ok) 70%,var(--accent)));border-radius:6px;transition:width .25s}
 .pnum{font-size:13px;color:var(--muted)} .pnum b{color:var(--ink);font-size:15px}
 .rownav{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.spanrow{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:12.5px;color:var(--muted)}
+.rowhd{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:6px 2px 0}
 .rownav .mid{flex:1;text-align:center;font-size:13px;color:var(--muted)}
 .rownav .mid input{width:58px;text-align:center;font-weight:700;font-size:15px;padding:4px;border:1px solid var(--line-strong);border-radius:8px;background:var(--panel)}
 .strip{width:100%;display:block;margin:10px 0 2px;border-radius:9px;background:var(--panel-2);border:1px solid var(--line);cursor:pointer}
@@ -1044,7 +1046,7 @@ dialog{border-radius:var(--r-lg);box-shadow:var(--shadow-lg)}
 <input type="file" id="fileImg" accept="image/*" hidden>
 <div id="toast" role="status"></div>
 
-<script>(function(){var b='20261030j',v=b;try{var s=JSON.parse(localStorage.getItem('beadstudio.tplv')||'null');if(s&&s.base===b)v=b+'-'+s.t}catch(e){}window.TPL_BASE_V=b;document.write('<script src="templates.js?v='+v+'"><\/script><script src="projetos3d.js?v='+b+'"><\/script>')})();</script>
+<script>(function(){var b='20261030n',v=b;try{var s=JSON.parse(localStorage.getItem('beadstudio.tplv')||'null');if(s&&s.base===b)v=b+'-'+s.t}catch(e){}window.TPL_BASE_V=b;document.write('<script src="templates.js?v='+v+'"><\/script><script src="projetos3d.js?v='+b+'"><\/script>')})();</script>
 <script>
 'use strict';
 /* =====================================================================
@@ -1291,7 +1293,7 @@ const S = {
   zoom:14, showGrid:true, showCodes:false, style:'bead',
   mode:'create', tab:'counts', sort:'count',
   beadMm:2.6, plate:50, stock:{},
-  asm:{view:'row',row:0,color:0,hoverRun:null},
+  asm:{view:'row',row:0,color:0,hoverRun:null,span:1},      /* span: 1 ou 2 linhas por vez na Montar (lembrado em beadstudio.asmspan) */
   hl:0, hlLock:0, hover:null,
   tpl:null, tplDirty:false,   /* molde que está sendo editado: {kind:'builtin'|'mine', id, name} */
   sel:null, selW:0, selH:0,   /* seleção de contas: máscara (1 = selecionada) do tamanho da placa */
@@ -1391,7 +1393,7 @@ function cellVis(i,x,y,v){
   if(S.mode==='assemble'){
     if(S.done[i])return [1,0];
     const a=S.asm;
-    if(a.view==='row') return y===a.row?[1,1]:[0.2,0];
+    if(a.view==='row') return (y>=a.row&&y<a.row+rowSpanLen(a.row))?[1,1]:[0.2,0];
     if(a.color) return v===a.color?[1,1]:[0.1,0];
     return [0.34,0];
   }
@@ -1462,8 +1464,8 @@ function draw(){
   }
   // linha atual (montagem)
   if(S.mode==='assemble'&&S.asm.view==='row'){
-    const y=S.asm.row; ctx.fillStyle=C.accent;ctx.globalAlpha=.12;ctx.fillRect(x0-5,y0+y*cs,w*cs+10,cs);ctx.globalAlpha=1;
-    ctx.strokeStyle=C.accent;ctx.lineWidth=1.5;ctx.strokeRect(x0-5,y0+y*cs+.5,w*cs+10,cs-1);
+    const y=S.asm.row,hh=rowSpanLen(y)*cs; ctx.fillStyle=C.accent;ctx.globalAlpha=.12;ctx.fillRect(x0-5,y0+y*cs,w*cs+10,hh);ctx.globalAlpha=1;
+    ctx.strokeStyle=C.accent;ctx.lineWidth=1.5;ctx.strokeRect(x0-5,y0+y*cs+.5,w*cs+10,hh-1);
     const hr=S.asm.hoverRun; if(hr){ctx.lineWidth=3;ctx.strokeRect(x0+hr.x0*cs,y0+hr.y*cs,(hr.x1-hr.x0+1)*cs,cs)}
   }
   // prévia de formas
@@ -1490,7 +1492,7 @@ function draw(){
     const hov=S.hover&&S.hover.x===x; if(hov){ctx.fillStyle=C.accent;rr(ctx,x0+x*cs+cs/2-12,3,24,RULER-9,6);ctx.fill();ctx.fillStyle='#fff'}
     ctx.fillText(n,x0+x*cs+cs/2,RULER/2-1);ctx.fillStyle=C.text}}
   for(let y=0;y<h;y++){const n=y+1;if(n===1||n%step===0||n===h&&step<=5){
-    const hov=(S.hover&&S.hover.y===y)||(S.mode==='assemble'&&S.asm.view==='row'&&S.asm.row===y); if(hov){ctx.fillStyle=C.accent;rr(ctx,2,y0+y*cs+cs/2-9,RULER-9,18,6);ctx.fill();ctx.fillStyle='#fff'}
+    const hov=(S.hover&&S.hover.y===y)||(S.mode==='assemble'&&S.asm.view==='row'&&y>=S.asm.row&&y<S.asm.row+rowSpanLen(S.asm.row)); if(hov){ctx.fillStyle=C.accent;rr(ctx,2,y0+y*cs+cs/2-9,RULER-9,18,6);ctx.fill();ctx.fillStyle='#fff'}
     ctx.fillText(n,RULER/2-3,y0+y*cs+cs/2);ctx.fillStyle=C.text}}
 }
 
@@ -1611,7 +1613,7 @@ const SEL_HINTS={
   col:'Clique numa coluna (ou no número dela) para pegar a coluna inteira · arraste para pegar só um trecho · botão direito tira · Esc limpa tudo',
   rect:'Arraste para marcar uma área · botão direito tira da seleção · Esc limpa tudo'
 };
-const ASM_HINT='Clique nas contas para marcar o que você já colocou na placa · ↑ ↓ trocam de linha · Espaço marca a linha';
+const ASM_HINT='Clique nas contas para marcar o que você já colocou na placa · ↑ ↓ trocam de linha (ou de duas em duas, se escolher "2 linhas") · Espaço marca a linha';
 function updHint(){$('#hint').textContent=selecting()?SEL_HINTS[S.selShape]:(S.mode==='create'?TOOL_HINTS[S.tool]:ASM_HINT)}
 function syncSelUI(){
   const on=selecting(),b=$('#btnSel');
@@ -1937,6 +1939,22 @@ function runsForRow(y){
 }
 function rowHasBeads(y){for(let x=0;x<S.w;x++)if(S.grid[y*S.w+x])return true;return false}
 function nextRow(dir,from){let y=from+dir;while(y>=0&&y<S.h){if(rowHasBeads(y))return y;y+=dir}return from}
+/* GRUPOS DE LINHAS da Montar: com "2 linhas por vez" as linhas formam pares CONTADOS DE BAIXO PARA CIMA (a última linha do desenho fecha o 1º par; se a altura for ímpar, a linha de cima fica sozinha),
+   então os pares são os mesmos montando de baixo para cima ou de cima para baixo. `S.asm.row` é sempre a linha de CIMA do grupo. Com 1 linha por vez tudo se comporta como antes. */
+const asmSpan=()=>S.asm.span===2?2:1;
+const groupStart=y=>asmSpan()===1?y:Math.max(0,y-((y+S.h)%2));
+const rowSpanLen=g=>asmSpan()===2&&g+1<S.h&&groupStart(g+1)===g?2:1;
+const groupRows=g=>rowSpanLen(g)===2?[g,g+1]:[g];
+const groupHasBeads=g=>groupRows(g).some(rowHasBeads);
+function nextGroup(dir,from){          // `from` = linha de cima de um grupo (ou fora do desenho); devolve o início do próximo grupo que tem contas, ou `from`
+  let y=dir>0?from+(from>=0&&from<S.h?rowSpanLen(from):1):from-1;
+  while(y>=0&&y<S.h){const g=groupStart(y);if(groupHasBeads(g))return g;y=dir>0?g+rowSpanLen(g):g-1}
+  return from}
+function setAsmSpan(n){
+  S.asm.span=n===2?2:1;lsSet('beadstudio.asmspan',S.asm.span);S.asm.hoverRun=null;
+  let g=groupStart(clamp(S.asm.row,0,S.h-1));
+  if(!groupHasBeads(g)){const a=nextGroup(1,g);g=groupHasBeads(a)?a:nextGroup(-1,g)}
+  S.asm.row=g;renderAssemble();requestDraw();scrollToRow()}
 function asmChanged(){recount();renderAssemble();requestDraw();scheduleSave()}
 function renderAssemble(){
   const pct=total?Math.round(doneTotal/total*100):0;
@@ -1948,67 +1966,80 @@ function renderAssemble(){
   if(S.asm.view==='row') renderRowView(box); else renderColorView(box);
 }
 function renderRowView(box){
-  let y=S.asm.row; if(y<0||y>=S.h||!rowHasBeads(y)){y=rowHasBeads(y)?y:nextRow(1,y);if(!rowHasBeads(y))y=nextRow(-1,S.h);S.asm.row=y}
-  const runs=runsForRow(y),n=runs.reduce((s,r)=>s+r.n,0),dn=runs.reduce((s,r)=>s+r.done,0),pend=n-dn;
+  let g=clamp(S.asm.row,0,S.h-1);g=groupStart(g);
+  if(!groupHasBeads(g)){const a=nextGroup(1,g);g=groupHasBeads(a)?a:nextGroup(-1,S.h)}
+  S.asm.row=g;
+  const rows=groupRows(g),multi=rows.length>1,sp2=asmSpan()===2;
+  const runsBy=rows.map(runsForRow),runs=runsBy.flat();
+  const n=runs.reduce((s,r)=>s+r.n,0),dn=runs.reduce((s,r)=>s+r.done,0),pend=n-dn;
   const need={};runs.forEach(r=>{need[r.v]=(need[r.v]||0)+(r.n-r.done)});
   const take=Object.keys(need).filter(v=>need[v]).sort((a,b)=>need[b]-need[a]);
   const complete=pend===0;
-  const hasPrev=nextRow(-1,y)!==y,hasNext=nextRow(1,y)!==y;
+  const hasPrev=nextGroup(-1,g)!==g,hasNext=nextGroup(1,g)!==g;
+  const lines=multi?'linhas':'linha';
   box.innerHTML=`
+    <div class="spanrow"><span>Por vez:</span><div class="seg small" id="spanSeg"><button data-n="1" class="${sp2?'':'on'}">1 linha</button><button data-n="2" class="${sp2?'on':''}" title="Mostra e marca duas linhas juntas (pares contados de baixo para cima)">2 linhas</button></div></div>
     <div class="rownav">
-      <button class="btn sm icon-only" id="rPrev" title="Linha anterior (↑)" ${hasPrev?'':'disabled'}>${icon('chevU')}</button>
-      <div class="mid">Linha <input type="number" id="rNum" min="1" max="${S.h}" value="${y+1}"> de ${S.h}</div>
-      <button class="btn sm icon-only" id="rNext" title="Próxima linha (↓)" ${hasNext?'':'disabled'}>${icon('chevD')}</button>
+      <button class="btn sm icon-only" id="rPrev" title="${sp2?'Duas linhas acima':'Linha anterior'} (↑)" ${hasPrev?'':'disabled'}>${icon('chevU')}</button>
+      <div class="mid">${multi?'Linhas':'Linha'} <input type="number" id="rNum" min="1" max="${S.h}" value="${g+1}">${multi?` e ${g+2}`:''} de ${S.h}</div>
+      <button class="btn sm icon-only" id="rNext" title="${sp2?'Duas linhas abaixo':'Próxima linha'} (↓)" ${hasNext?'':'disabled'}>${icon('chevD')}</button>
     </div>
-    <div class="note" style="margin:0 0 8px">${n} ${n===1?'conta':'contas'} nesta linha${dn?` · ${dn} ${dn===1?'já colocada':'já colocadas'}`:''}. Coloque da <b>esquerda para a direita</b>.</div>
-    <canvas id="rowStrip" class="strip" title="Visão da linha inteira — clique numa conta para marcar"></canvas>
+    <div class="note" style="margin:0 0 8px">${n} ${n===1?'conta':'contas'} ${multi?'nestas duas linhas':'nesta linha'}${dn?` · ${dn} ${dn===1?'já colocada':'já colocadas'}`:''}. Coloque da <b>esquerda para a direita</b>${multi?', as duas linhas de cada coluna juntas':''}.</div>
+    <canvas id="rowStrip" class="strip" title="Visão ${multi?'das linhas inteiras':'da linha inteira'} — clique numa conta para marcar"></canvas>
     ${take.length?`<div class="take">${take.map(v=>`<span class="tk"><i style="background:${PALETTE[v-1].hex}"></i>${need[v]}× ${PALETTE[v-1].code}</span>`).join('')}</div>
-    <div class="note" style="margin:2px 0 0">↑ separe estas contas antes de começar a linha</div>`:''}
+    <div class="note" style="margin:2px 0 0">↑ separe estas contas antes de começar ${multi?'as linhas':'a linha'}</div>`:''}
     <div class="runs" id="runs">${runs.map((r,ix)=>{
       const p=PALETTE[r.v-1],st=r.done===r.n?'done':(r.done?'partial':'');
-      return `<button class="run ${st}" data-ix="${ix}"><span class="ck">${icon('check',15)}</span><span class="swb"><span class="sw" style="background:${p.hex};color:${p.ink}">${p.code}</span></span><span class="tx"><b>${r.n}× ${p.name}</b><small>${p.code}${r.done&&r.done<r.n?` · ${r.done}/${r.n} colocadas`:''}</small></span><span class="cols">${r.n>1?`colunas<br>${r.x0+1}–${r.x1+1}`:`coluna<br>${r.x0+1}`}</span></button>`}).join('')}</div>
+      const hd=multi&&(ix===0||runs[ix-1].y!==r.y)?`<div class="rowhd">Linha ${r.y+1}</div>`:'';
+      return hd+`<button class="run ${st}" data-ix="${ix}"><span class="ck">${icon('check',15)}</span><span class="swb"><span class="sw" style="background:${p.hex};color:${p.ink}">${p.code}</span></span><span class="tx"><b>${r.n}× ${p.name}</b><small>${p.code}${r.done&&r.done<r.n?` · ${r.done}/${r.n} colocadas`:''}</small></span><span class="cols">${r.n>1?`colunas<br>${r.x0+1}–${r.x1+1}`:`coluna<br>${r.x0+1}`}</span></button>`}).join('')}</div>
     <div class="rowdone">
-      <button class="btn sm" id="rAll">${complete?'Desmarcar linha':'Marcar linha toda'}</button>
-      ${hasNext?`<button class="btn sm ${complete?'primary':''}" id="rNext2">Próxima linha ${icon('chevR',16)}</button>`:(complete?'<span class="note" style="margin:0;align-self:center">Última linha concluída 🎉</span>':'')}
+      <button class="btn sm" id="rAll">${complete?`Desmarcar ${multi?'as duas linhas':'linha'}`:`Marcar ${multi?'as duas linhas':'linha toda'}`}</button>
+      ${hasNext?`<button class="btn sm ${complete?'primary':''}" id="rNext2">${sp2?'Próximas 2 linhas':'Próxima linha'} ${icon('chevR',16)}</button>`:(complete?`<span class="note" style="margin:0;align-self:center">Última${multi?'s':''} ${lines} concluída${multi?'s':''} 🎉</span>`:'')}
     </div>
-    <p class="note">Dica: clique numa conta do quadriculado para marcá-la como colocada, ou use ↑ ↓ e a barra de espaço (marca/desmarca a linha).</p>`;
-  drawRowStrip(y);
+    <p class="note">Dica: clique numa conta do quadriculado para marcá-la como colocada, ou use ↑ ↓ e a barra de espaço (marca/desmarca ${multi?'as duas linhas':'a linha'}).</p>`;
+  drawRowStrip(rows);
   const go=r=>{S.asm.row=r;S.asm.hoverRun=null;renderAssemble();requestDraw();scrollToRow()};
-  $('#rPrev').onclick=()=>go(nextRow(-1,y));
-  const nx=()=>go(nextRow(1,y)); $('#rNext').onclick=nx; const n2=$('#rNext2'); if(n2)n2.onclick=nx;
-  $('#rNum').onchange=e=>{let v=clamp((parseInt(e.target.value,10)||1)-1,0,S.h-1);if(!rowHasBeads(v)){const a=nextRow(1,v),b=nextRow(-1,v);v=a!==v?a:b}go(v)};
-  $('#rAll').onclick=()=>{setRowDone(y,!complete)};
+  $$('#spanSeg button').forEach(b=>b.onclick=()=>setAsmSpan(+b.dataset.n));
+  $('#rPrev').onclick=()=>go(nextGroup(-1,g));
+  const nx=()=>go(nextGroup(1,g)); $('#rNext').onclick=nx; const n2=$('#rNext2'); if(n2)n2.onclick=nx;
+  $('#rNum').onchange=e=>{let v=groupStart(clamp((parseInt(e.target.value,10)||1)-1,0,S.h-1));if(!groupHasBeads(v)){const a=nextGroup(1,v),b=nextGroup(-1,v);v=a!==v?a:b}go(v)};
+  $('#rAll').onclick=()=>{setRowsDone(rows,!complete)};
   $$('#runs .run').forEach(el=>{
     const r=runs[+el.dataset.ix];
-    el.onclick=()=>{const val=r.done===r.n?0:1;for(let x=r.x0;x<=r.x1;x++)S.done[y*S.w+x]=val;asmChanged()};
+    el.onclick=()=>{const val=r.done===r.n?0:1;for(let x=r.x0;x<=r.x1;x++)S.done[r.y*S.w+x]=val;asmChanged()};
     el.onmouseenter=()=>{S.asm.hoverRun=r;requestDraw()};el.onmouseleave=()=>{S.asm.hoverRun=null;requestDraw()};
   });
 }
-function drawRowStrip(y){
+function drawRowStrip(rows){
   const cvs=$('#rowStrip');if(!cvs)return;
-  const dpr=window.devicePixelRatio||1,W=cvs.clientWidth||330,H=40,cell=W/S.w;
+  const nr=rows.length,RH=22;
+  const dpr=window.devicePixelRatio||1,W=cvs.clientWidth||330,cell=W/S.w,lab=13+(nr-1)*RH+18,H=lab+9;
   cvs.width=Math.round(W*dpr);cvs.height=H*dpr;cvs.style.height=H+'px';
   const c=cvs.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
-  const r=Math.min(cell*0.46,8);
-  for(let x=0;x<S.w;x++){
-    const v=S.grid[y*S.w+x],cx=(x+.5)*cell;
-    if(!v){c.fillStyle=C.hole;c.beginPath();c.arc(cx,13,Math.max(.8,r*.22),0,TAU);c.fill();continue}
-    c.globalAlpha=S.done[y*S.w+x]?.28:1;
-    c.fillStyle=PALETTE[v-1].hex;c.beginPath();c.arc(cx,13,r,0,TAU);c.fill();
-    c.lineWidth=1;c.strokeStyle=C.edge;c.stroke();c.globalAlpha=1;
-  }
+  const r=Math.min(cell*0.46,8,nr>1?RH*0.46:8);
+  rows.forEach((y,k)=>{
+    const cy=13+k*RH;
+    for(let x=0;x<S.w;x++){
+      const v=S.grid[y*S.w+x],cx=(x+.5)*cell;
+      if(!v){c.fillStyle=C.hole;c.beginPath();c.arc(cx,cy,Math.max(.8,r*.22),0,TAU);c.fill();continue}
+      c.globalAlpha=S.done[y*S.w+x]?.28:1;
+      c.fillStyle=PALETTE[v-1].hex;c.beginPath();c.arc(cx,cy,r,0,TAU);c.fill();
+      c.lineWidth=1;c.strokeStyle=C.edge;c.stroke();c.globalAlpha=1;
+    }
+  });
   c.fillStyle=C.text;c.font='9px "Segoe UI",sans-serif';c.textAlign='center';c.textBaseline='middle';
   const step=cell>=11?5:10;
-  for(let x=0;x<S.w;x++){const n=x+1;if(n===1||n%step===0)c.fillText(n,(x+.5)*cell,31)}
+  for(let x=0;x<S.w;x++){const n=x+1;if(n===1||n%step===0)c.fillText(n,(x+.5)*cell,lab)}
   cvs.onclick=e=>{
-    const rc=cvs.getBoundingClientRect(),x=Math.floor((e.clientX-rc.left)/rc.width*S.w),i=y*S.w+x;
+    const rc=cvs.getBoundingClientRect(),x=Math.floor((e.clientX-rc.left)/rc.width*S.w),k=clamp(Math.floor((e.clientY-rc.top-2)/RH),0,nr-1),i=rows[k]*S.w+x;
     if(x>=0&&x<S.w&&S.grid[i]){S.done[i]=S.done[i]?0:1;asmChanged()}
   };
 }
-function setRowDone(y,val){for(let x=0;x<S.w;x++)if(S.grid[y*S.w+x])S.done[y*S.w+x]=val?1:0;asmChanged()}
+function setRowsDone(rows,val){rows.forEach(y=>{for(let x=0;x<S.w;x++)if(S.grid[y*S.w+x])S.done[y*S.w+x]=val?1:0});asmChanged()}
+function setRowDone(y,val){setRowsDone([y],val)}
 function scrollToRow(){
-  const top=RULER+S.asm.row*S.zoom;
-  if(top<stage.scrollTop+40||top>stage.scrollTop+stage.clientHeight-80)stage.scrollTo({top:top-stage.clientHeight/2,behavior:'smooth'});
+  const top=RULER+S.asm.row*S.zoom,bot=top+rowSpanLen(S.asm.row)*S.zoom;
+  if(top<stage.scrollTop+40||bot>stage.scrollTop+stage.clientHeight-80)stage.scrollTo({top:top-stage.clientHeight/2,behavior:'smooth'});
 }
 function renderColorView(box){
   const list=[];for(let v=1;v<=NCOL;v++)if(counts[v])list.push(v);list.sort((a,b)=>counts[b]-counts[a]);
@@ -2033,8 +2064,8 @@ function setMode(m){
   $('#paneAssemble').classList.toggle('on',m==='assemble');
   $('#paneCounts').classList.toggle('on',m==='create'&&S.tab==='counts');
   $('#paneProject').classList.toggle('on',m==='create'&&S.tab==='project');
-  $('#hint').textContent=m==='create'?TOOL_HINTS[S.tool]:'Clique nas contas para marcar o que você já colocou na placa · ↑ ↓ trocam de linha · Espaço marca a linha';
-  if(m==='assemble'){if(!rowHasBeads(S.asm.row))S.asm.row=nextRow(1,-1);renderAssemble()}
+  $('#hint').textContent=m==='create'?TOOL_HINTS[S.tool]:'Clique nas contas para marcar o que você já colocou na placa · ↑ ↓ trocam de linha (ou de duas em duas, se escolher "2 linhas") · Espaço marca a linha';
+  if(m==='assemble'){S.asm.row=groupStart(clamp(S.asm.row,0,S.h-1));if(!groupHasBeads(S.asm.row))S.asm.row=nextGroup(1,-1);renderAssemble()}
   S.hl=0;layout();renderSel();syncSelUI();
   if(m==='assemble')setTimeout(scrollToRow,60);
 }
@@ -2168,6 +2199,7 @@ let tplDecoded=null, tplCat='all';
 const MINE_KEY='beadstudio.mine';
 const lsGet=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){toast('Não consegui salvar (o armazenamento do navegador está cheio ou bloqueado)');return false}};
+S.asm.span=lsGet('beadstudio.asmspan',1)===2?2:1;
 function loadMine(){const a=lsGet(MINE_KEY,[]);return Array.isArray(a)?a:[]}
 const saveMine=a=>lsSet(MINE_KEY,a);
 /* ajustes que você fez em templates do catálogo (ficam no navegador; o original continua guardado) */
@@ -3365,13 +3397,13 @@ window.addEventListener('keydown',e=>{
   if(k==='escape'){clearSel();return}
   if(ctrl&&k==='a'){e.preventDefault();selectAll();if(S.mode==='create')setTool('select');else{S.selOn=true;syncSelUI()}return}
   if(k===' '&&!ctrl){e.preventDefault();
-    if(S.mode==='assemble'&&S.asm.view==='row'&&!e.repeat){const runs=runsForRow(S.asm.row);setRowDone(S.asm.row,runs.some(r=>r.done<r.n))}
+    if(S.mode==='assemble'&&S.asm.view==='row'&&!e.repeat){const rows=groupRows(S.asm.row);setRowsDone(rows,rows.some(y=>runsForRow(y).some(r=>r.done<r.n)))}
     else if(S.mode==='create'){spaceDown=true;stage.classList.add('grab')}
     return}
   if(S.mode==='assemble'){
     if(k==='s'&&!ctrl){S.selOn=!S.selOn;syncSelUI();return}
-    if(k==='arrowdown'||k==='arrowright'){e.preventDefault();S.asm.row=nextRow(1,S.asm.row);renderAssemble();requestDraw();scrollToRow()}
-    if(k==='arrowup'||k==='arrowleft'){e.preventDefault();S.asm.row=nextRow(-1,S.asm.row);renderAssemble();requestDraw();scrollToRow()}
+    if(k==='arrowdown'||k==='arrowright'){e.preventDefault();S.asm.row=nextGroup(1,S.asm.row);renderAssemble();requestDraw();scrollToRow()}
+    if(k==='arrowup'||k==='arrowleft'){e.preventDefault();S.asm.row=nextGroup(-1,S.asm.row);renderAssemble();requestDraw();scrollToRow()}
     return;
   }
   const map={b:'pencil',e:'eraser',g:'fill',i:'picker',l:'line',r:'rect',o:'ellipse',s:'select',m:'move'};

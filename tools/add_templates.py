@@ -90,7 +90,7 @@ for f in a.files:
         bad = {c for r in rows for c in r if c != '.' and c not in letters}
         if len(w) != 1 or bad:
             print('ERRO: linhas inválidas em', n, w, bad); skipped += 1; continue
-        if g in F.GENERIC_GROUPS:
+        if g in F.GENERIC_GROUPS and not by_name(g):       # nome genérico só vai para "Outros" se o usuário não tiver criado uma categoria com esse nome (ele criou "Animais")
             cat = 'other'
         else:
             # série = franquia: vai para a categoria dela; se ainda não existe na galeria, a categoria é criada

@@ -46,7 +46,7 @@ def _centers(lab_pix, K, rare_thr, rare_n, min_blob, seed=3):
 
 
 def convert5(path=None, size=50, rgb=None, box=None, thr=205, bg='auto', refs=None, tol=45, white_outside=None, mask=None, plates=None, K=18, over=8, dark_frac=0.28, black_L=13.0, dark_L=34.0, cover=0.5,
-             sat=1.2, contrast=1.05, sharp=0.3, skin_safe=True, pale_skin=False, seal=None, peel=0.0, rare_thr=16.0, rare_n=6, min_blob=None, smooth_de=22.0, trace=None, post=None, pre_blur=0, hatch=0):
+             sat=1.2, contrast=1.05, sharp=0.3, skin_safe=True, pale_skin=False, seal=None, peel=0.0, rare_thr=16.0, rare_n=6, min_blob=None, smooth_de=22.0, trace=None, post=None, pre_blur=0, hatch=0, warm_white=0, holes_bg=0.0, center_map=None):
     if rgb is None: rgb = illus._load(path, box)
     if mask is not None: m = mask(rgb)
     else:
@@ -63,6 +63,12 @@ def convert5(path=None, size=50, rgb=None, box=None, thr=205, bg='auto', refs=No
         ys, xs = np.nonzero(~m); ppb = max(xs.max() - xs.min() + 1, ys.max() - ys.min() + 1) / float(size)
         if peel: m = illus.peel_white(rgb, m, peel * max(xs.max() - xs.min() + 1, ys.max() - ys.min() + 1) / 50.0)
         if seal: m = illus.seal_leaks(m, seal * ppb)
+    if holes_bg:                     # buracos de BRANCO PURO fechados dentro da figura (fundo entre pernas/asas) também são fundo; área mínima em contas
+        import beadclean
+        ys, xs = np.nonzero(~m); ppb = max(xs.max() - xs.min() + 1, ys.max() - ys.min() + 1) / float(size if not plates else max(size, 1))
+        hb = holes_bg if isinstance(holes_bg, (tuple, list)) else (holes_bg, 3.0)          # (área mínima, distância máxima ao fundo de fora), em contas de 1 placa
+        ppb1 = max(xs.max() - xs.min() + 1, ys.max() - ys.min() + 1) / 50.0
+        m = beadclean.enclosed_bg(rgb, m, hb[0] * ppb1 * ppb1, maxd=hb[1] * ppb1)
     raw0 = rgb.copy()
     if pre_blur:                     # tira o hachurado/ruído de ilustração rabiscada: filtro bilateral (suaviza as áreas e mantém as bordas) `pre_blur` vezes
         for _ in range(int(pre_blur)): rgb = cv2.bilateralFilter(rgb, 9, 40, 9)
@@ -96,7 +102,17 @@ def convert5(path=None, size=50, rgb=None, box=None, thr=205, bg='auto', refs=No
             raw_m = colr[isfg][sel].mean(axis=0); hh, ss, vv = colorsys.rgb_to_hsv(*(raw_m / 255.0)); hh *= 360
             if 8 <= hh <= 62 and 0.03 <= ss <= 0.40 and vv >= 0.88: letters.append(illus._nearest_pale(raw_m)); black.append(False); continue
         letters.append(r5.near120(mean, dark=True) if Lc < dark_L else r5.near120(mean)); black.append(Lc < black_L)
+    if center_map:                   # troca por centro de cor (molde a molde): center_map(rgb médio, L, letra, é preto?) -> letra nova ou None (fica)
+        for k in range(nC):
+            sel = lid == k
+            mrgb = tuple(float(v) for v in cols[sel].mean(axis=0)) if sel.any() else (0.0, 0.0, 0.0)
+            nl = center_map(mrgb, float(cen[k][0]), letters[k], black[k])
+            if nl: letters[k] = nl; black[k] = False
     black = np.array(black)
+    if trace is not None:            # diagnóstico: (centro, cor média RGB, L, letra, é preto?, nº de pixels)
+        for k in range(nC):
+            sel = lid == k
+            trace.append((k, tuple(int(v) for v in (cols[sel].mean(axis=0) if sel.any() else (0, 0, 0))), round(float(cen[k][0]), 1), letters[k], bool(black[k]), int(sel.sum())))
     def blocks(a): return a.reshape(nh, over, nw, over, *a.shape[2:])
     counts = np.stack([blocks(lmap == k).sum(axis=(1, 3)) for k in range(nC)], axis=-1)        # (nh, nw, nC)
     nfg = counts.sum(axis=2)
@@ -114,6 +130,13 @@ def convert5(path=None, size=50, rgb=None, box=None, thr=205, bg='auto', refs=No
             tot = {}
             for k in np.nonzero(c)[0]: tot[letters[k]] = tot.get(letters[k], 0) + c[k]
             grid[y][x] = max(tot, key=tot.get)
+    if warm_white:                   # rosto quase branco que o k-means juntou com o branco de verdade: conta branca cuja cor original é quente (R-B >= warm_white) vira o tom de pele mais claro
+        wt = isfg.astype(np.float32)[..., None]
+        sumc = (colr * wt).reshape(nh, over, nw, over, 3).sum(axis=(1, 3)); sumw = np.maximum(wt.reshape(nh, over, nw, over, 1).sum(axis=(1, 3)), 1e-3)
+        mc = sumc / sumw
+        for y in range(nh):
+            for x in range(nw):
+                if grid[y][x] in ('w', 'i') and mc[y, x, 0] - mc[y, x, 2] >= warm_white and mc[y, x, 0] >= 225: grid[y][x] = illus._nearest_pale(mc[y, x])
     # suavização: conta isolada de cor parecida com a vizinhança vira a da vizinhança (nunca mexe no contorno preto)
     if smooth_de:
         LL = _letter_lab(); g2 = [r[:] for r in grid]
